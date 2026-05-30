@@ -171,17 +171,22 @@ vibe_coding_tutorial/
 
 ### `templates/` — 视图层
 
-- **index.html** — 表单页面，CSS Grid 双列布局；内置**一键填充示例数据**按钮（JS 自动填入预设测试数据）；提交时显示加载状态
+- **index.html** — 表单页面，CSS Grid 双列布局；内置**一键填充示例数据**按钮（JS 自动填入预设测试数据）；提交时显示加载状态；右上角**明暗主题切换按钮**
 - **result.html** — 报告页面，通过 Jinja2 模板语法渲染：
   - CSS 自定义属性 `--score` 驱动环形图（conic-gradient）
   - 5 维度进度条（宽度绑定 `dim.score`）
   - 条件渲染等级标签（`{% if %}` 判断分数区间）
+  - 右上角主题切换按钮，与首页保持一致
 
 ### `static/style.css` — 样式
 
-- CSS 变量统一管理主题色（`--primary: #e91e63` 粉红色系）
-- 响应式布局：`@media (max-width: 600px)` 下双列变单列
-- 动画：环形图加载动画、按钮 hover 效果
+- CSS 变量双主题设计：`[data-theme="dark"]`（暗夜浪漫）和 `[data-theme="light"]`（日暖浪漫），通过 `data-theme` 属性切换
+- Noto Serif SC 衬线标题字体 + Google Fonts 加载
+- 暗夜模式：深酒红底 + 玫瑰金文字，毛玻璃卡片；日暖模式：奶油白底 + 暖棕玫瑰
+- 浮动花瓣粒子动画（10 个 CSS 随机轨迹）
+- 卡片渐入动画（staggered fadeInUp）
+- 响应式布局：`@media (max-width: 600px)` 下单列
+- `prefers-reduced-motion` 降级（关闭动画和粒子）
 
 ---
 
