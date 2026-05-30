@@ -279,6 +279,68 @@ body::before {
     width: 18px; height: 18px; accent-color: var(--rose);
 }
 
+/* ── 示例选择器 ────────────────────────────── */
+.demo-tags {
+    display: flex; gap: 6px; margin-bottom: 0.8rem; flex-wrap: wrap;
+}
+.demo-tag {
+    padding: 6px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-dim);
+    font-size: 0.82rem; cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+.demo-tag:hover { border-color: var(--rose); color: var(--rose-light); }
+.demo-tag.active {
+    background: rgba(212,132,122,0.12);
+    border-color: var(--rose);
+    color: var(--rose-light);
+}
+.demo-tag.confirmed {
+    background: rgba(80,180,120,0.12);
+    border-color: #50b478;
+    color: #6fd89a;
+}
+
+.demo-preview {
+    background: var(--text-block-bg);
+    border: 1px solid var(--text-block-b);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 0.83rem; line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 0.8rem;
+    max-height: 160px; overflow-y: auto;
+    transition: all 0.3s ease;
+}
+.demo-preview-head {
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+}
+.demo-preview-row { margin-bottom: 4px; }
+.demo-preview-row strong { color: var(--rose-light); }
+
+.demo-actions {
+    display: flex; gap: 8px;
+}
+.demo-actions .btn { flex: 1; font-size: 0.9rem; padding: 0.6rem; }
+.demo-btn-cancel {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+}
+.demo-btn-cancel:hover {
+    border-color: var(--rose);
+    color: var(--text);
+    box-shadow: none;
+    transform: none;
+}
+
 /* ── 按钮 ──────────────────────────────────── */
 .btn {
     display: block; width: 100%;
@@ -302,16 +364,6 @@ body::before {
 .btn:active { transform: translateY(0); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
-
-.btn-demo {
-    background: transparent; border: 1.5px solid var(--rose);
-    color: var(--rose-light); margin-bottom: 0.8rem;
-}
-.btn-demo:hover { box-shadow: 0 4px 20px var(--rose-glow); }
-
-.btn-demo-success {
-    background: rgba(80, 180, 120, 0.2); border-color: #50b478; color: #6fd89a;
-}
 
 /* ── 结果页 · 得分圆环 ──────────────────────── */
 .score-section { text-align: center; }
