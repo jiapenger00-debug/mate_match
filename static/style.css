@@ -29,6 +29,10 @@
     --tag-low-bg:   rgba(180,100,100,0.12);
     --tag-low-c:    #d49494;
     --tag-low-b:    rgba(180,100,100,0.3);
+    --demo-active-bg:    rgba(212, 132, 122, 0.12);
+    --demo-confirmed-bg: rgba(80, 180, 120, 0.12);
+    --demo-confirmed-b:  rgba(80, 180, 120, 0.3);
+    --demo-confirmed-c:  #6fd89a;
     --text-block-bg:rgba(255, 245, 240, 0.03);
     --text-block-b: rgba(212, 132, 122, 0.1);
     --search-b:     rgba(212,132,122,0.1);
@@ -71,6 +75,10 @@
     --tag-low-bg:   rgba(160,90,90,0.08);
     --tag-low-c:    #9a6060;
     --tag-low-b:    rgba(160,90,90,0.25);
+    --demo-active-bg:    rgba(194, 112, 106, 0.1);
+    --demo-confirmed-bg: rgba(60, 130, 90, 0.12);
+    --demo-confirmed-b:  rgba(60, 130, 90, 0.3);
+    --demo-confirmed-c:  #3d8058;
     --text-block-bg:rgba(194, 112, 106, 0.04);
     --text-block-b: rgba(194, 112, 106, 0.1);
     --search-b:     rgba(194,112,106,0.1);
@@ -295,14 +303,14 @@ body::before {
 }
 .demo-tag:hover { border-color: var(--rose); color: var(--rose-light); }
 .demo-tag.active {
-    background: rgba(212,132,122,0.12);
+    background: var(--demo-active-bg);
     border-color: var(--rose);
     color: var(--rose-light);
 }
 .demo-tag.confirmed {
-    background: rgba(80,180,120,0.12);
-    border-color: #50b478;
-    color: #6fd89a;
+    background: var(--demo-confirmed-bg);
+    border-color: var(--demo-confirmed-b);
+    color: var(--demo-confirmed-c);
 }
 
 .demo-preview {
@@ -364,6 +372,19 @@ body::before {
 .btn:active { transform: translateY(0); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+
+.btn-demo {
+    background: transparent;
+    border: 1.5px solid var(--rose);
+    color: var(--rose-light);
+    margin-bottom: 0.8rem;
+}
+.btn-demo:hover { box-shadow: 0 4px 20px var(--rose-glow); }
+.btn-demo-success {
+    background: rgba(80, 180, 120, 0.2);
+    border-color: #50b478;
+    color: #6fd89a;
+}
 
 /* ── 结果页 · 得分圆环 ──────────────────────── */
 .score-section { text-align: center; }
