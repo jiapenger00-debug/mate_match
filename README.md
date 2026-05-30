@@ -171,7 +171,7 @@ vibe_coding_tutorial/
 
 ### `templates/` — 视图层
 
-- **index.html** — 纯表单页面，使用 CSS Grid 双列布局，通过 JS 在提交时显示加载状态
+- **index.html** — 表单页面，CSS Grid 双列布局；内置**一键填充示例数据**按钮（JS 自动填入预设测试数据）；提交时显示加载状态
 - **result.html** — 报告页面，通过 Jinja2 模板语法渲染：
   - CSS 自定义属性 `--score` 驱动环形图（conic-gradient）
   - 5 维度进度条（宽度绑定 `dim.score`）
