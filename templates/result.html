@@ -3,40 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a0a14">
     <title>分析报告 · 灵魂契合度</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <!-- 浮动心形粒子 -->
+    <button class="theme-toggle" id="theme-toggle" aria-label="切换明暗主题"></button>
+    <div class="hearts-container" aria-hidden="true">
+        <span class="heart-particle">🌸</span>
+        <span class="heart-particle">💕</span>
+        <span class="heart-particle">✨</span>
+        <span class="heart-particle">💖</span>
+        <span class="heart-particle">🌹</span>
+        <span class="heart-particle">💗</span>
+        <span class="heart-particle">🫧</span>
+        <span class="heart-particle">💝</span>
+        <span class="heart-particle">💫</span>
+        <span class="heart-particle">🌸</span>
+    </div>
+
+    <a href="#main-content" class="skip-link">跳到主内容</a>
+
     <header class="header">
-        <h1>💘 匹配分析报告</h1>
-        <p>{{ girl_name }} × {{ user_name }}</p>
+        <h1>契合度报告</h1>
+        <p>{{ girl_name }} &times; {{ user_name }}</p>
     </header>
 
-    <main class="container">
-        <!-- ── 综合得分 ── -->
-        <section class="card" style="text-align: center;">
+    <main class="container" id="main-content">
+        <!-- 综合得分 -->
+        <section class="card score-section">
             <div class="score-circle" style="--score: {{ overall_score }}">
                 <div class="score-inner">
                     <span class="score-number">{{ overall_score }}</span>
-                    <span class="score-label">匹配度</span>
+                    <span class="score-label">契合度</span>
                 </div>
             </div>
-
             {% if overall_score >= 85 %}
-            <span class="level-tag level-high">💚 高度契合</span>
+            <span class="level-tag level-high">灵魂伴侣</span>
             {% elif overall_score >= 75 %}
-            <span class="level-tag level-mid">💛 比较匹配</span>
+            <span class="level-tag level-mid">心有灵犀</span>
             {% elif overall_score >= 60 %}
-            <span class="level-tag level-mid">🧡 有一定基础</span>
+            <span class="level-tag level-mid">渐入佳境</span>
             {% else %}
-            <span class="level-tag level-low">❤️ 差异较大</span>
+            <span class="level-tag level-low">各有天地</span>
             {% endif %}
         </section>
 
-        <!-- ── 各维度得分 ── -->
+        <!-- 各维度 -->
         {% if dimensions %}
         <section class="card">
-            <h2>📊 各维度分析</h2>
+            <h2>维度解析</h2>
             <ul class="dimension-list">
                 {% for dim in dimensions %}
                 <li class="dimension-item">
@@ -54,29 +71,27 @@
         </section>
         {% endif %}
 
-        <!-- ── 综合评语 ── -->
+        <!-- 综合评语 -->
         {% if summary %}
         <section class="card">
-            <h2>📝 综合评语</h2>
+            <h2>心的解读</h2>
             <div class="text-block">{{ summary }}</div>
         </section>
         {% endif %}
 
-        <!-- ── 发展建议 ── -->
+        <!-- 发展建议 -->
         {% if suggestion %}
         <section class="card">
-            <h2>💡 发展建议</h2>
+            <h2>温柔建议</h2>
             <div class="text-block">{{ suggestion }}</div>
         </section>
         {% endif %}
 
-        <!-- ── 搜索参考 ── -->
+        <!-- 搜索参考 -->
         {% if search_results %}
         <section class="card">
-            <h2>🌐 网络参考信息</h2>
-            <p style="font-size: 0.85rem; color: #888; margin-bottom: 0.5rem;">
-                以下是通过网络搜索找到的公开信息（仅供参考）
-            </p>
+            <h2>她们说</h2>
+            <p class="search-note">网络上关于她的公开信息</p>
             <div class="search-refs">
                 {% for sr in search_results %}
                 <div class="search-ref-item">
@@ -88,14 +103,24 @@
         </section>
         {% endif %}
 
-        <!-- ── 返回按钮 ── -->
-        <a href="/" class="btn" style="text-align: center; text-decoration: none;">
-            🔄 重新分析
-        </a>
+        <a href="/" class="btn result-return-link">重新探索</a>
     </main>
 
     <footer class="footer">
-        <p>分析结果由 AI 生成，仅供参考娱乐 ❤️</p>
+        <p>分析结果由 AI 生成，仅供参考</p>
     </footer>
+    <script>
+        (function () {
+            const toggle = document.getElementById('theme-toggle');
+            const html = document.documentElement;
+            const saved = localStorage.getItem('theme');
+            if (saved) html.setAttribute('data-theme', saved);
+            toggle.addEventListener('click', () => {
+                const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                html.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+            });
+        })();
+    </script>
 </body>
 </html>

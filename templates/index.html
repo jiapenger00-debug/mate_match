@@ -3,154 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a0a14">
     <title>灵魂契合度 · 匹配分析</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <!-- 浮动心形粒子 -->
+    <button class="theme-toggle" id="theme-toggle" aria-label="切换明暗主题"></button>
+    <div class="hearts-container" aria-hidden="true">
+        <span class="heart-particle">🌸</span>
+        <span class="heart-particle">💕</span>
+        <span class="heart-particle">✨</span>
+        <span class="heart-particle">💖</span>
+        <span class="heart-particle">🌹</span>
+        <span class="heart-particle">💗</span>
+        <span class="heart-particle">🫧</span>
+        <span class="heart-particle">💝</span>
+        <span class="heart-particle">💫</span>
+        <span class="heart-particle">🌸</span>
+    </div>
+
+    <a href="#main-content" class="skip-link">跳到主内容</a>
+
     <header class="header">
-        <h1>💘 灵魂契合度分析</h1>
-        <p>输入两人信息，让 AI 帮你分析匹配程度</p>
+        <h1>灵魂契合度</h1>
+        <p>聆听两颗心的共振频率</p>
     </header>
 
-    <main class="container">
+    <main class="container" id="main-content">
         <form id="analyze-form" action="/api/analyze" method="POST">
-            <!-- ── 女方信息 ── -->
+            <!-- 女方信息 -->
             <section class="card">
-                <h2>👩 女方信息</h2>
+                <h2>她</h2>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="girl_name">姓名 / 昵称 *</label>
+                        <label for="girl_name">名字</label>
                         <input type="text" id="girl_name" name="girl_name" required
-                               placeholder="必填，用于网络搜索">
+                               autocomplete="name" placeholder="她的名字…">
                     </div>
                     <div class="form-group">
                         <label for="girl_age">年龄</label>
                         <input type="number" id="girl_age" name="girl_age" min="14" max="80"
-                               placeholder="选填">
+                               placeholder="选填…">
                     </div>
                     <div class="form-group">
                         <label for="girl_hometown">家乡</label>
-                        <input type="text" id="girl_hometown" name="girl_hometown" placeholder="如：上海">
+                        <input type="text" id="girl_hometown" name="girl_hometown" placeholder="上海…">
                     </div>
                     <div class="form-group">
                         <label for="girl_occupation">职业</label>
-                        <input type="text" id="girl_occupation" name="girl_occupation" placeholder="如：设计师">
+                        <input type="text" id="girl_occupation" name="girl_occupation" placeholder="设计师…">
                     </div>
                     <div class="form-group">
                         <label for="girl_education">学历</label>
-                        <input type="text" id="girl_education" name="girl_education" placeholder="如：本科">
+                        <input type="text" id="girl_education" name="girl_education" placeholder="本科…">
                     </div>
                     <div class="form-group">
                         <label for="girl_appearance">外貌特征</label>
-                        <input type="text" id="girl_appearance" name="girl_appearance" placeholder="如：身高165，长发，气质型">
+                        <input type="text" id="girl_appearance" name="girl_appearance" placeholder="身高165，长发…">
                     </div>
                     <div class="form-group full">
-                        <label for="girl_personality">性格描述</label>
+                        <label for="girl_personality">性格</label>
                         <textarea id="girl_personality" name="girl_personality"
-                                  placeholder="如：外向开朗，喜欢社交，有点小脾气但也懂得体贴..."></textarea>
+                                  placeholder="她是什么样的人…"></textarea>
                     </div>
                     <div class="form-group full">
                         <label for="girl_interests">兴趣爱好</label>
                         <textarea id="girl_interests" name="girl_interests"
-                                  placeholder="如：喜欢旅行拍照、健身瑜伽、看韩剧..."></textarea>
+                                  placeholder="她喜欢做什么…"></textarea>
                     </div>
                     <div class="form-group full">
-                        <label for="girl_values">价值观 / 人生追求</label>
+                        <label for="girl_values">人生态度</label>
                         <textarea id="girl_values" name="girl_values"
-                                  placeholder="如：看重家庭，希望稳定生活，追求生活品质..."></textarea>
+                                  placeholder="她追求怎样的生活…"></textarea>
                     </div>
                     <div class="form-group full">
-                        <label for="girl_extra">补充信息</label>
+                        <label for="girl_extra">更多关于她</label>
                         <textarea id="girl_extra" name="girl_extra"
-                                  placeholder="其他你想补充的任何信息..."></textarea>
+                                  placeholder="任何你想记录的…"></textarea>
                     </div>
                 </div>
             </section>
 
-            <!-- ── 用户信息 ── -->
+            <!-- 用户信息 -->
             <section class="card">
-                <h2>🧑 你的信息</h2>
+                <h2>你</h2>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="user_name">姓名 / 昵称 *</label>
+                        <label for="user_name">名字</label>
                         <input type="text" id="user_name" name="user_name" required
-                               placeholder="必填">
+                               autocomplete="name" placeholder="你的名字…">
                     </div>
                     <div class="form-group">
                         <label for="user_age">年龄</label>
                         <input type="number" id="user_age" name="user_age" min="14" max="80"
-                               placeholder="选填">
+                               placeholder="选填…">
                     </div>
                     <div class="form-group">
                         <label for="user_hometown">家乡</label>
-                        <input type="text" id="user_hometown" name="user_hometown" placeholder="如：北京">
+                        <input type="text" id="user_hometown" name="user_hometown" placeholder="北京…">
                     </div>
                     <div class="form-group">
                         <label for="user_occupation">职业</label>
-                        <input type="text" id="user_occupation" name="user_occupation" placeholder="如：程序员">
+                        <input type="text" id="user_occupation" name="user_occupation" placeholder="工程师…">
                     </div>
                     <div class="form-group">
                         <label for="user_education">学历</label>
-                        <input type="text" id="user_education" name="user_education" placeholder="如：硕士">
+                        <input type="text" id="user_education" name="user_education" placeholder="硕士…">
                     </div>
                     <div class="form-group">
                         <label for="user_appearance">外貌特征</label>
-                        <input type="text" id="user_appearance" name="user_appearance" placeholder="如：身高178，偏瘦，戴眼镜">
+                        <input type="text" id="user_appearance" name="user_appearance" placeholder="身高178…">
                     </div>
                     <div class="form-group full">
-                        <label for="user_personality">性格描述</label>
+                        <label for="user_personality">性格</label>
                         <textarea id="user_personality" name="user_personality"
-                                  placeholder="如：偏内向，稳重细心，有时比较宅..."></textarea>
+                                  placeholder="你是怎样的人…"></textarea>
                     </div>
                     <div class="form-group full">
                         <label for="user_interests">兴趣爱好</label>
                         <textarea id="user_interests" name="user_interests"
-                                  placeholder="如：喜欢打游戏、研究新技术、偶尔跑步..."></textarea>
+                                  placeholder="你喜欢做什么…"></textarea>
                     </div>
                     <div class="form-group full">
-                        <label for="user_values">价值观 / 人生追求</label>
+                        <label for="user_values">人生态度</label>
                         <textarea id="user_values" name="user_values"
-                                  placeholder="如：追求事业成长，希望几年内买房，重视精神契合..."></textarea>
+                                  placeholder="你追求怎样的生活…"></textarea>
                     </div>
                     <div class="form-group full">
-                        <label for="user_extra">补充信息</label>
+                        <label for="user_extra">更多关于你</label>
                         <textarea id="user_extra" name="user_extra"
-                                  placeholder="其他你想补充的任何信息..."></textarea>
+                                  placeholder="任何你想说的…"></textarea>
                     </div>
                 </div>
             </section>
 
-            <!-- ── 操作区 ── -->
+            <!-- 操作区 -->
             <section class="card">
                 <div class="search-toggle">
                     <input type="checkbox" id="enable_search" name="enable_search" checked>
-                    <label for="enable_search">启用网络搜索（搜索女方的公开信息作为分析参考）</label>
+                    <label for="enable_search">搜索她的公开信息作为参考</label>
                 </div>
-                <button type="button" class="btn" id="demo-btn" style="background: linear-gradient(135deg, #9c27b0, #7b1fa2); margin-bottom: 0.8rem;">
-                    📋 一键填充示例数据
+                <button type="button" class="btn btn-demo" id="demo-btn">
+                    一键填充示例
                 </button>
                 <button type="submit" class="btn" id="submit-btn">
-                    🔍 开始匹配分析
+                    开始匹配分析
                 </button>
             </section>
         </form>
     </main>
 
     <footer class="footer">
-        <p>分析结果由 AI 生成，仅供参考娱乐 ❤️</p>
+        <p>分析结果由 AI 生成，仅供参考</p>
     </footer>
 
     <script>
-        // 示例数据
         const demoData = {
             girl_name: '林小曼',
             girl_age: '25',
             girl_hometown: '成都',
-            girl_occupation: 'UI设计师',
+            girl_occupation: 'UI 设计师',
             girl_education: '本科',
             girl_appearance: '身高163，长发微卷，笑起来很甜',
             girl_personality: '开朗乐观，有点小文艺，对生活有仪式感。偶尔会有选择困难症，遇到大事会犹豫。',
-            girl_interests: '喜欢周末探店拍照、看展、手冲咖啡、瑜伽、偶尔画水彩',
+            girl_interests: '周末探店拍照、逛展览、手冲咖啡、瑜伽、偶尔画水彩',
             girl_values: '希望两个人能一起成长，互相欣赏对方的闪光点。不追求大富大贵，但要有品质的生活。家庭观念重。',
             girl_extra: '有一只叫豆豆的橘猫，养了三年',
             user_name: '张浩然',
@@ -160,12 +177,11 @@
             user_education: '硕士',
             user_appearance: '身高178，偏瘦，戴黑框眼镜，喜欢穿卫衣',
             user_personality: '偏内向但熟了话很多，做事认真靠谱，喜欢提前规划。有时候太理性，不太会表达感情。',
-            user_interests: '喜欢骑行、玩Switch、周末研究新菜谱、看科幻电影、偶尔打羽毛球',
-            user_values: '追求技术上的成长，但更看重work-life balance。希望找一个能理解程序员节奏的伴侣，一起把日子过好。',
+            user_interests: '骑行、玩 Switch、周末研究新菜谱、看科幻电影、偶尔打羽毛球',
+            user_values: '追求技术上的成长，但更看重 work-life balance。希望找一个能理解程序员节奏的伴侣。',
             user_extra: '养了一只柯基叫肉松，已经两岁了',
         };
 
-        // 一键填充
         document.getElementById('demo-btn').addEventListener('click', function () {
             for (const [id, value] of Object.entries(demoData)) {
                 const el = document.getElementById(id);
@@ -173,23 +189,34 @@
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
             const btn = this;
-            const originalText = btn.textContent;
-            btn.textContent = '✅ 已填充！下滑检查后点击分析';
-            btn.style.background = 'linear-gradient(135deg, #4caf50, #388e3c)';
+            const t = btn.textContent;
+            btn.textContent = '已填充，下滑查看';
+            btn.classList.add('btn-demo-success');
             setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.background = 'linear-gradient(135deg, #9c27b0, #7b1fa2)';
+                btn.textContent = t;
+                btn.classList.remove('btn-demo-success');
             }, 2000);
         });
 
-        // 表单提交时显示加载状态
         const form = document.getElementById('analyze-form');
         const submitBtn = document.getElementById('submit-btn');
-
         form.addEventListener('submit', function () {
             submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ AI 正在分析中，请稍候...';
+            submitBtn.textContent = '正在解读两颗心的距离…';
         });
+
+        // 主题切换
+        (function () {
+            const toggle = document.getElementById('theme-toggle');
+            const html = document.documentElement;
+            const saved = localStorage.getItem('theme');
+            if (saved) html.setAttribute('data-theme', saved);
+            toggle.addEventListener('click', () => {
+                const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                html.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+            });
+        })();
     </script>
 </body>
 </html>

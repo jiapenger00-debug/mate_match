@@ -73,6 +73,21 @@ DEEPSEEK_API_KEY=sk-xxx uvicorn main:app --host 0.0.0.0 --port 8000
 2. **环境变量**：`DEEPSEEK_API_KEY=sk-xxx` — uvicorn 直接启动时使用
 3. **`.env` 文件**：在项目根目录创建 `.env` — 需自行管理，已在 `.gitignore`
 
+## 文档同步规则
+
+每次修改代码后，根据变更类型判断是否需要同步文档：
+
+| 变更类型 | 需更新 |
+|----------|--------|
+| 新增/删除路由、修改 API 接口 | `README.md`（架构图、路由说明）+ `USAGE.md`（使用示例） |
+| 新增/修改 CLI 参数或配置项 | `README.md`（模块说明）+ `USAGE.md`（配置说明 + 启动命令） |
+| 前端功能变更（如新增按钮、交互） | `README.md`（templates 部分） |
+| 新增/修改 Docker 或部署方式 | `USAGE.md`（部署章节） |
+| 仅改 CSS 样式、修 bug、重构 | 通常不需要，除非影响用户可见行为 |
+| `services/llm_service.py` 中修改 prompt 或维度 | `USAGE.md`（分析维度说明） |
+
+> 经验法则：如果用户手册（USAGE）或架构说明（README）会因此变得不准确，就必须更新。
+
 ## 注意事项
 
 - `main.py` 启动时会解析 `--api-key` / `--host` / `--port`，这些参数优先级高于 `.env`
