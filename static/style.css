@@ -373,19 +373,6 @@ body::before {
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
 
-.btn-demo {
-    background: transparent;
-    border: 1.5px solid var(--rose);
-    color: var(--rose-light);
-    margin-bottom: 0.8rem;
-}
-.btn-demo:hover { box-shadow: 0 4px 20px var(--rose-glow); }
-.btn-demo-success {
-    background: rgba(80, 180, 120, 0.2);
-    border-color: #50b478;
-    color: #6fd89a;
-}
-
 /* ── 结果页 · 得分圆环 ──────────────────────── */
 .score-section { text-align: center; }
 .score-circle {
