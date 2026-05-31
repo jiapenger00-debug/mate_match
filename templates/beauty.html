@@ -80,6 +80,10 @@
             fd.append('user_photo', uf);
             document.getElementById('girl-score').textContent = '...';
             document.getElementById('user-score').textContent = '...';
+            document.getElementById('girl-result').classList.add('visible');
+            document.getElementById('user-result').classList.add('visible');
+            document.getElementById('girl-detail').textContent = 'AI 正在分析中…';
+            document.getElementById('user-detail').textContent = 'AI 正在分析中…';
             fetch('/api/beauty', { method: 'POST', body: fd })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
