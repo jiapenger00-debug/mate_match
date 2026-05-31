@@ -97,19 +97,22 @@ vibe_coding_tutorial/
 ├── .gitignore
 │
 ├── services/                     # [服务层] 核心业务逻辑
-│   ├── __init__.py               #   公开导出 search_girl_info, analyze_matching
+│   ├── __init__.py               #   公开导出 search_girl_info, analyze_matching, save_share, get_share
 │   ├── search_service.py         #   DuckDuckGo 网络搜索
-│   └── llm_service.py            #   DeepSeek API 调用 + Prompt 构建
+│   ├── llm_service.py            #   DeepSeek API 调用 + Prompt 构建
+│   └── share_service.py          #   分享数据持久化（SQLite）
 │
 ├── templates/                    # [视图层] Jinja2 模板
 │   ├── index.html                #   信息输入表单（女方 + 用户）
-│   └── result.html               #   分析报告展示（分数/维度/建议）
+│   ├── result.html               #   分析报告展示（分数/维度/建议/分享栏）
+│   └── share.html                #   分享名片页（精简卡片 + 可展开完整报告）
 │
 ├── static/                       # [静态资源]
-│   └── style.css                 #   全局样式（响应式布局）
+│   ├── style.css                 #   全局样式（双主题 + 搜索/分享/示例选择器）
+│   └── demo-data.js              #   4 组示例情侣数据
 │
-└── docs/                         # [文档]
-    └── USAGE.md                  #   详细使用指南
+├── docs/                         # [文档]
+│   └── USAGE.md                  #   详细使用指南
 ```
 
 ---
@@ -121,13 +124,17 @@ vibe_coding_tutorial/
 | 路由 | 方法 | 职责 |
 |------|------|------|
 | `/` | GET | 渲染 `index.html` 表单页面 |
-| `/api/analyze` | POST | 接收 Form 数据，串联搜索 → LLM 分析，渲染 `result.html` |
+| `/api/analyze` | POST | 接收 Form 数据，串联搜索 → LLM 分析，渲染 `result.html`，自动生成分享链接 |
+| `/api/search` | POST | 仅执行搜索，返回 JSON 结果列表（前端异步展示） |
+| `/api/share` | POST | 接收 JSON 分析结果，存入 SQLite，返回短 ID |
+| `/s/<id>` | GET | 渲染分享名片页（精简卡片 + 可展开完整报告） |
 
 核心逻辑：
 - 启动时解析 `--api-key` / `--host` / `--port` 命令行参数，设置环境变量后再导入其他模块
 - `_parse_int()` — 将表单字符串安全转为 `int`，空值返回 `None`
 - API Key 缺失时返回友好错误页面，引导用户配置
 - 异常捕获：LLM 调用失败时返回降级结果而非 500 错误
+- `/api/analyze` 支持 `selected_results` 参数，前端可传入预筛选结果跳过搜索
 
 ### `config.py` — 配置层
 
@@ -171,22 +178,20 @@ vibe_coding_tutorial/
 
 ### `templates/` — 视图层
 
-- **index.html** — 表单页面，CSS Grid 双列布局；内置**一键填充示例数据**按钮（JS 自动填入预设测试数据）；提交时显示加载状态；右上角**明暗主题切换按钮**
-- **result.html** — 报告页面，通过 Jinja2 模板语法渲染：
-  - CSS 自定义属性 `--score` 驱动环形图（conic-gradient）
-  - 5 维度进度条（宽度绑定 `dim.score`）
-  - 条件渲染等级标签（`{% if %}` 判断分数区间）
-  - 右上角主题切换按钮，与首页保持一致
+- **index.html** — 表单页面，CSS Grid 双列布局；内置**标签式示例选择器**（4 组情侣模板，点击预览后确认填充）；异步搜索流程（搜索动画 → 结果卡片勾选 → AI 分析）；右上角**明暗主题切换按钮**
+- **result.html** — 报告页面，通过 Jinja2 模板语法渲染；底部**分享栏**（复制链接 + toast 提示），支持生成公开分享页
+- **share.html** — 分享名片页：精简卡片（两人名字 + 匹配度圆环 + 等级 + 评语）+ 可展开完整报告
 
 ### `static/style.css` — 样式
 
 - CSS 变量双主题设计：`[data-theme="dark"]`（暗夜浪漫）和 `[data-theme="light"]`（日暖浪漫），通过 `data-theme` 属性切换
 - Noto Serif SC 衬线标题字体 + Google Fonts 加载
-- 暗夜模式：深酒红底 + 玫瑰金文字，毛玻璃卡片；日暖模式：奶油白底 + 暖棕玫瑰
 - 浮动花瓣粒子动画（10 个 CSS 随机轨迹）
 - 卡片渐入动画（staggered fadeInUp）
-- 响应式布局：`@media (max-width: 600px)` 下单列
-- `prefers-reduced-motion` 降级（关闭动画和粒子）
+- 搜索增强：全屏覆盖层动画 + 进度条 + 结果卡片
+- 示例选择器：标签栏 + 预览面板 + 确认/取消按钮
+- 分享栏：URL 输入框 + 复制按钮 + toast 提示
+- 响应式布局 + `prefers-reduced-motion` 降级
 
 ---
 

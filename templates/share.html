@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a0a14">
-    <title>分析报告 · 灵魂契合度</title>
+    <title>分享报告 · 灵魂契合度</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -28,6 +28,7 @@
     <header class="header">
         <h1>契合度报告</h1>
         <p>{{ girl_name }} &times; {{ user_name }}</p>
+        <p class="share-badge">🔗 分享的链接</p>
     </header>
 
     <main class="container" id="main-content">
@@ -103,19 +104,7 @@
         </section>
         {% endif %}
 
-        {% if share_id %}
-        <section class="card share-bar-card">
-            <h2>分享这份报告</h2>
-            <div class="share-bar">
-                <input type="text" class="share-url" id="share-url" readonly
-                       value="{{ request.base_url }}s/{{ share_id }}">
-                <button type="button" class="btn share-copy-btn" onclick="copyShareUrl()">复制链接</button>
-            </div>
-            <p class="share-copied-toast" id="share-toast">链接已复制！</p>
-        </section>
-        {% endif %}
-
-        <a href="/" class="btn result-return-link">重新探索</a>
+        <a href="/" class="btn result-return-link">探索你们的契合度</a>
     </main>
 
     <footer class="footer">
@@ -133,17 +122,6 @@
                 localStorage.setItem('theme', next);
             });
         })();
-    </script>
-    <script>
-        function copyShareUrl() {
-            var input = document.getElementById('share-url');
-            input.select(); input.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(input.value).then(function () {
-                var toast = document.getElementById('share-toast');
-                toast.style.display = 'block';
-                setTimeout(function () { toast.style.display = 'none'; }, 2000);
-            });
-        }
     </script>
 </body>
 </html>

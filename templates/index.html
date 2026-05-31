@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#1a0a14">
     <title>灵魂契合度 · 匹配分析</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/demo-data.js"></script>
 </head>
 <body>
     <!-- 浮动心形粒子 -->
@@ -138,15 +139,35 @@
                 </div>
             </section>
 
-            <!-- 操作区 -->
+            <!-- ── 操作区 ── -->
             <section class="card">
                 <div class="search-toggle">
                     <input type="checkbox" id="enable_search" name="enable_search" checked>
                     <label for="enable_search">搜索她的公开信息作为参考</label>
                 </div>
-                <button type="button" class="btn btn-demo" id="demo-btn">
-                    一键填充示例
-                </button>
+
+                <p class="demo-label">一键填充示例：</p>
+                <div class="demo-tags" id="demo-tags"></div>
+
+                <div class="search-results-wrap" id="search-results-wrap">
+                    <p class="search-result-count" id="search-result-count"></p>
+                    <div class="search-results-list" id="search-results-list"></div>
+                    <div class="demo-actions">
+                        <button type="button" class="btn demo-btn-cancel" id="search-skip">跳过，直接分析</button>
+                        <button type="button" class="btn" id="search-confirm">确认选择的，开始分析</button>
+                    </div>
+                </div>
+
+                <div class="demo-preview" id="demo-preview" style="display:none;">
+                    <div class="demo-preview-head">预览</div>
+                    <div id="demo-preview-content"></div>
+                </div>
+
+                <div class="demo-actions" id="demo-actions" style="display:none;">
+                    <button type="button" class="btn demo-btn-cancel" id="demo-cancel">取消</button>
+                    <button type="button" class="btn" id="demo-confirm">确认填充</button>
+                </div>
+
                 <button type="submit" class="btn" id="submit-btn">
                     开始匹配分析
                 </button>
@@ -154,56 +175,181 @@
         </form>
     </main>
 
+    <div class="search-overlay" id="search-overlay">
+        <div class="search-overlay-text" id="search-overlay-text">正在搜索她的公开信息…</div>
+        <div class="search-progress"><div class="search-progress-bar"></div></div>
+        <p id="search-count" style="color:#9e8a8a;font-size:0.85rem;margin-top:0.8rem;"></p>
+    </div>
+
     <footer class="footer">
         <p>分析结果由 AI 生成，仅供参考</p>
     </footer>
 
     <script>
-        const demoData = {
-            girl_name: '林小曼',
-            girl_age: '25',
-            girl_hometown: '成都',
-            girl_occupation: 'UI 设计师',
-            girl_education: '本科',
-            girl_appearance: '身高163，长发微卷，笑起来很甜',
-            girl_personality: '开朗乐观，有点小文艺，对生活有仪式感。偶尔会有选择困难症，遇到大事会犹豫。',
-            girl_interests: '周末探店拍照、逛展览、手冲咖啡、瑜伽、偶尔画水彩',
-            girl_values: '希望两个人能一起成长，互相欣赏对方的闪光点。不追求大富大贵，但要有品质的生活。家庭观念重。',
-            girl_extra: '有一只叫豆豆的橘猫，养了三年',
-            user_name: '张浩然',
-            user_age: '28',
-            user_hometown: '西安',
-            user_occupation: '后端开发工程师',
-            user_education: '硕士',
-            user_appearance: '身高178，偏瘦，戴黑框眼镜，喜欢穿卫衣',
-            user_personality: '偏内向但熟了话很多，做事认真靠谱，喜欢提前规划。有时候太理性，不太会表达感情。',
-            user_interests: '骑行、玩 Switch、周末研究新菜谱、看科幻电影、偶尔打羽毛球',
-            user_values: '追求技术上的成长，但更看重 work-life balance。希望找一个能理解程序员节奏的伴侣。',
-            user_extra: '养了一只柯基叫肉松，已经两岁了',
-        };
+        var form = document.getElementById('analyze-form');
+        // 异步搜索 → 展示结果 → 确认 → 提交分析
+        var searchOverlay = document.getElementById('search-overlay');
+        var searchOverlayText = document.getElementById('search-overlay-text');
+        var searchCount = document.getElementById('search-count');
+        var searchResultsWrap = document.getElementById('search-results-wrap');
+        var searchResultCount = document.getElementById('search-result-count');
+        var searchResultsList = document.getElementById('search-results-list');
+        var searchSkip = document.getElementById('search-skip');
+        var searchConfirm = document.getElementById('search-confirm');
+        var submitBtn = document.getElementById('submit-btn');
+        var selectedResultsJson = '[]';
 
-        document.getElementById('demo-btn').addEventListener('click', function () {
-            for (const [id, value] of Object.entries(demoData)) {
-                const el = document.getElementById(id);
-                if (el) el.value = value;
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var enableSearch = document.getElementById('enable_search').checked;
+            if (!enableSearch) {
+                submitAnalysis('');
+                return;
             }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            const btn = this;
-            const t = btn.textContent;
-            btn.textContent = '已填充，下滑查看';
-            btn.classList.add('btn-demo-success');
-            setTimeout(() => {
-                btn.textContent = t;
-                btn.classList.remove('btn-demo-success');
-            }, 2000);
+            // 显示搜索动画
+            searchOverlay.classList.add('visible');
+            searchOverlayText.textContent = '正在搜索她的公开信息…';
+            searchCount.textContent = '';
+            submitBtn.disabled = true;
+            submitBtn.textContent = '搜索中…';
+
+            var fd = new FormData(form);
+            fetch('/api/search', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (results) {
+                    searchOverlay.classList.remove('visible');
+                    if (!results || !results.length) {
+                        submitAnalysis(''); return;
+                    }
+                    searchResultCount.textContent = '找到 ' + results.length + ' 条结果，勾选要参考的内容：';
+                    searchResultsList.innerHTML = '';
+                    results.forEach(function (r, i) {
+                        var card = document.createElement('div');
+                        card.className = 'search-result-card checked';
+                        card.innerHTML =
+                            '<input type="checkbox" checked data-idx="' + i + '">' +
+                            '<div class="search-result-body"><strong>' + r.title + '</strong><p>' + (r.snippet || '') + '</p></div>';
+                        card.addEventListener('click', function (ev) {
+                            if (ev.target.tagName === 'INPUT') return;
+                            var cb = card.querySelector('input');
+                            cb.checked = !cb.checked;
+                            card.classList.toggle('checked', cb.checked);
+                        });
+                        searchResultsList.appendChild(card);
+                    });
+                    searchResultsWrap.classList.add('visible');
+                    submitBtn.style.display = 'none';
+                })
+                .catch(function () {
+                    searchOverlay.classList.remove('visible');
+                    submitAnalysis('');
+                });
         });
 
-        const form = document.getElementById('analyze-form');
-        const submitBtn = document.getElementById('submit-btn');
-        form.addEventListener('submit', function () {
+        function submitAnalysis(selectedJson) {
+            searchResultsWrap.classList.remove('visible');
+            submitBtn.style.display = 'block';
             submitBtn.disabled = true;
-            submitBtn.textContent = '正在解读两颗心的距离…';
+            submitBtn.textContent = 'AI 正在分析中…';
+            searchOverlay.classList.add('visible');
+            searchOverlayText.textContent = '正在解读两颗心的距离…';
+            searchCount.textContent = '';
+            var fd = new FormData(form);
+            fd.append('selected_results', selectedJson);
+            fetch('/api/analyze', { method: 'POST', body: fd })
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    document.open(); document.write(html); document.close();
+                });
+        }
+
+        searchSkip.addEventListener('click', function () { submitAnalysis('[]'); });
+        searchConfirm.addEventListener('click', function () {
+            var checked = [];
+            document.querySelectorAll('.search-result-card input:checked').forEach(function (cb) {
+                var idx = parseInt(cb.getAttribute('data-idx'));
+                var card = cb.closest('.search-result-card');
+                var titleEl = card.querySelector('strong');
+                var snippetEl = card.querySelector('p');
+                checked.push({ title: titleEl.textContent, url: '', snippet: snippetEl ? snippetEl.textContent : '' });
+            });
+            submitAnalysis(JSON.stringify(checked));
         });
+
+        // 示例选择器
+        (function () {
+            var tagsEl = document.getElementById('demo-tags');
+            var previewEl = document.getElementById('demo-preview');
+            var previewContent = document.getElementById('demo-preview-content');
+            var actionsEl = document.getElementById('demo-actions');
+            var cancelBtn = document.getElementById('demo-cancel');
+            var confirmBtn = document.getElementById('demo-confirm');
+            var activeExample = null;
+            var confirmedExample = null;
+            // demo-data.js 使用 extra_info 作为键，但 HTML 表单字段名是 extra
+            var fieldMap = { extra_info: 'extra' };
+
+            // 渲染标签
+            DEMO_EXAMPLES.forEach(function (ex) {
+                var tag = document.createElement('span');
+                tag.className = 'demo-tag';
+                tag.textContent = ex.emoji + ' ' + ex.label;
+                tag.addEventListener('click', function () { selectExample(ex, tag); });
+                tagsEl.appendChild(tag);
+            });
+
+            function selectExample(ex, tag) {
+                document.querySelectorAll('.demo-tag').forEach(function (t) {
+                    t.classList.remove('active');
+                    if (confirmedExample && t.textContent.indexOf(confirmedExample.label) >= 0) {
+                        t.classList.add('confirmed');
+                    }
+                });
+                tag.classList.add('active');
+                activeExample = ex;
+                var g = ex.girl, u = ex.user;
+                previewContent.innerHTML =
+                    '<div class="demo-preview-row"><strong>' + g.name + '</strong>：' +
+                    g.personality.slice(0, 60) + '…</div>' +
+                    '<div class="demo-preview-row"><strong>' + u.name + '</strong>：' +
+                    u.personality.slice(0, 60) + '…</div>';
+                previewEl.style.display = 'block';
+                actionsEl.style.display = 'flex';
+            }
+
+            cancelBtn.addEventListener('click', function () {
+                previewEl.style.display = 'none';
+                actionsEl.style.display = 'none';
+                activeExample = null;
+                document.querySelectorAll('.demo-tag').forEach(function (t) {
+                    t.classList.remove('active');
+                    if (confirmedExample && t.textContent.indexOf(confirmedExample.label) >= 0) {
+                        t.classList.add('confirmed');
+                    }
+                });
+            });
+
+            confirmBtn.addEventListener('click', function () {
+                if (!activeExample) return;
+                var ex = activeExample;
+                ['girl', 'user'].forEach(function (who) {
+                    var data = ex[who];
+                    Object.keys(data).forEach(function (key) {
+                        var htmlKey = fieldMap[key] || key;
+                        var el = document.getElementById(who + '_' + htmlKey);
+                        if (el && data[key] !== undefined) el.value = data[key];
+                    });
+                });
+                confirmedExample = activeExample;
+                document.querySelectorAll('.demo-tag').forEach(function (t) {
+                    t.classList.remove('active', 'confirmed');
+                    if (t.textContent.indexOf(ex.label) >= 0) t.classList.add('confirmed');
+                });
+                previewEl.style.display = 'none';
+                actionsEl.style.display = 'none';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        })();
 
         // 主题切换
         (function () {
