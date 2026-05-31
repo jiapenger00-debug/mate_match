@@ -6,7 +6,9 @@
 import asyncio
 import logging
 import os
+import ssl
 
+import certifi
 import httpx
 
 from config import SEARCH_MAX_RESULTS
@@ -40,7 +42,8 @@ async def search_girl_info(name: str, extra_keywords: str = "") -> list[SearchRe
     logger.info(f"Brave 搜索: {query}")
 
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+        async with httpx.AsyncClient(timeout=5.0, verify=ssl_ctx) as client:
             resp = await client.get(
                 BRAVE_API_URL,
                 params={"q": query, "count": min(SEARCH_MAX_RESULTS, 20)},
