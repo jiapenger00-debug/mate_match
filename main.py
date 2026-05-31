@@ -80,11 +80,12 @@ async def search_only(
     girl_name: str = Form(""),
     girl_hometown: str = Form(""),
     girl_occupation: str = Form(""),
-    girl_education: str = Form(""),
+    girl_edu_level: str = Form(""),
+    girl_edu_school: str = Form(""),
 ):
     """仅执行搜索，返回结果列表 JSON，不调用 LLM。"""
     name = girl_name.strip()
-    extra_kw = " ".join(filter(None, [girl_occupation, girl_education, girl_hometown]))
+    extra_kw = " ".join(filter(None, [girl_occupation, girl_edu_level, girl_edu_school, girl_hometown]))
     results = await search_girl_info(name, extra_kw)
     import json as _json
     return HTMLResponse(
@@ -104,7 +105,9 @@ async def analyze(
     girl_age: str = Form(""),
     girl_hometown: str = Form(""),
     girl_occupation: str = Form(""),
-    girl_education: str = Form(""),
+    girl_edu_level: str = Form(""),
+    girl_edu_school: str = Form(""),
+    girl_edu_tags: str = Form(""),
     girl_appearance: str = Form(""),
     girl_personality: str = Form(""),
     girl_interests: str = Form(""),
@@ -115,7 +118,9 @@ async def analyze(
     user_age: str = Form(""),
     user_hometown: str = Form(""),
     user_occupation: str = Form(""),
-    user_education: str = Form(""),
+    user_edu_level: str = Form(""),
+    user_edu_school: str = Form(""),
+    user_edu_tags: str = Form(""),
     user_appearance: str = Form(""),
     user_personality: str = Form(""),
     user_interests: str = Form(""),
@@ -133,7 +138,9 @@ async def analyze(
         age=_parse_int(girl_age),
         hometown=girl_hometown.strip() or None,
         occupation=girl_occupation.strip() or None,
-        education=girl_education.strip() or None,
+        edu_level=girl_edu_level.strip() or None,
+        edu_school=girl_edu_school.strip() or None,
+        edu_tags=girl_edu_tags.strip() or None,
         appearance=girl_appearance.strip() or None,
         personality=girl_personality.strip() or None,
         interests=girl_interests.strip() or None,
@@ -146,7 +153,9 @@ async def analyze(
         age=_parse_int(user_age),
         hometown=user_hometown.strip() or None,
         occupation=user_occupation.strip() or None,
-        education=user_education.strip() or None,
+        edu_level=user_edu_level.strip() or None,
+        edu_school=user_edu_school.strip() or None,
+        edu_tags=user_edu_tags.strip() or None,
         appearance=user_appearance.strip() or None,
         personality=user_personality.strip() or None,
         interests=user_interests.strip() or None,
@@ -181,7 +190,7 @@ async def analyze(
                 pass
         else:
             extra_kw = " ".join(
-                filter(None, [girl.occupation, girl.education, girl.hometown])
+                filter(None, [girl.occupation, girl.edu_level, girl.edu_school, girl.hometown])
             )
             raw_results = await search_girl_info(girl.name, extra_kw)
             search_results = raw_results if raw_results else None

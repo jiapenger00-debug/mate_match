@@ -59,8 +59,16 @@ def build_user_message(
         parts.append(f"- 家乡：{girl.hometown}")
     if girl.occupation:
         parts.append(f"- 职业：{girl.occupation}")
-    if girl.education:
-        parts.append(f"- 学历：{girl.education}")
+    if girl.edu_level or girl.edu_school:
+        edu_parts = []
+        if girl.edu_level:
+            edu_parts.append(girl.edu_level)
+        if girl.edu_school:
+            school_str = girl.edu_school
+            if girl.edu_tags:
+                school_str += f"（{girl.edu_tags.replace(',', '/')}）"
+            edu_parts.append(school_str)
+        parts.append(f"- 学历/学校：{'，'.join(edu_parts)}")
     if girl.appearance:
         parts.append(f"- 外貌特征：{girl.appearance}")
     if girl.personality:
@@ -87,8 +95,16 @@ def build_user_message(
         parts.append(f"- 家乡：{user.hometown}")
     if user.occupation:
         parts.append(f"- 职业：{user.occupation}")
-    if user.education:
-        parts.append(f"- 学历：{user.education}")
+    if user.edu_level or user.edu_school:
+        edu_parts = []
+        if user.edu_level:
+            edu_parts.append(user.edu_level)
+        if user.edu_school:
+            school_str = user.edu_school
+            if user.edu_tags:
+                school_str += f"（{user.edu_tags.replace(',', '/')}）"
+            edu_parts.append(school_str)
+        parts.append(f"- 学历/学校：{'，'.join(edu_parts)}")
     if user.appearance:
         parts.append(f"- 外貌特征：{user.appearance}")
     if user.personality:

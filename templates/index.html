@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#1a0a14">
     <title>灵魂契合度 · 匹配分析</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/universities.js"></script>
     <script src="/static/demo-data.js"></script>
 </head>
 <body>
@@ -55,9 +56,27 @@
                         <label for="girl_occupation">职业</label>
                         <input type="text" id="girl_occupation" name="girl_occupation" placeholder="设计师…">
                     </div>
-                    <div class="form-group">
-                        <label for="girl_education">学历</label>
-                        <input type="text" id="girl_education" name="girl_education" placeholder="本科…">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="girl_edu_level">学历</label>
+                            <select id="girl_edu_level" name="girl_edu_level" style="width:100%;padding:0.7rem 0.9rem;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text);font-size:0.93rem;font-family:inherit;">
+                                <option value="">请选择…</option>
+                                <option value="高中/中专">高中/中专</option>
+                                <option value="大专">大专</option>
+                                <option value="本科">本科</option>
+                                <option value="硕士">硕士</option>
+                                <option value="MBA">MBA</option>
+                                <option value="博士">博士</option>
+                                <option value="博士后">博士后</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group uni-search-wrap">
+                            <label for="girl_edu_school">学校</label>
+                            <input type="text" id="girl_edu_school" name="girl_edu_school" autocomplete="off" placeholder="输入学校名称…">
+                            <div class="uni-search-dropdown" id="girl-uni-dropdown"></div>
+                            <div class="uni-tags" id="girl-uni-tags"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="girl_appearance">外貌特征</label>
@@ -83,6 +102,7 @@
                         <textarea id="girl_extra" name="girl_extra"
                                   placeholder="任何你想记录的…"></textarea>
                     </div>
+                    <input type="hidden" name="girl_edu_tags" id="girl_edu_tags">
                 </div>
             </section>
 
@@ -108,9 +128,27 @@
                         <label for="user_occupation">职业</label>
                         <input type="text" id="user_occupation" name="user_occupation" placeholder="工程师…">
                     </div>
-                    <div class="form-group">
-                        <label for="user_education">学历</label>
-                        <input type="text" id="user_education" name="user_education" placeholder="硕士…">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="user_edu_level">学历</label>
+                            <select id="user_edu_level" name="user_edu_level" style="width:100%;padding:0.7rem 0.9rem;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text);font-size:0.93rem;font-family:inherit;">
+                                <option value="">请选择…</option>
+                                <option value="高中/中专">高中/中专</option>
+                                <option value="大专">大专</option>
+                                <option value="本科">本科</option>
+                                <option value="硕士">硕士</option>
+                                <option value="MBA">MBA</option>
+                                <option value="博士">博士</option>
+                                <option value="博士后">博士后</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group uni-search-wrap">
+                            <label for="user_edu_school">学校</label>
+                            <input type="text" id="user_edu_school" name="user_edu_school" autocomplete="off" placeholder="输入学校名称…">
+                            <div class="uni-search-dropdown" id="user-uni-dropdown"></div>
+                            <div class="uni-tags" id="user-uni-tags"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="user_appearance">外貌特征</label>
@@ -136,6 +174,7 @@
                         <textarea id="user_extra" name="user_extra"
                                   placeholder="任何你想说的…"></textarea>
                     </div>
+                    <input type="hidden" name="user_edu_tags" id="user_edu_tags">
                 </div>
             </section>
 
@@ -339,6 +378,15 @@
                         var el = document.getElementById(who + '_' + htmlKey);
                         if (el && data[key] !== undefined) el.value = data[key];
                     });
+                    // Show university tags if school is filled
+                    var tagsData = data['edu_tags'];
+                    if (tagsData) {
+                        var tagsEl = document.getElementById(who + '-uni-tags');
+                        if (tagsEl) {
+                            var tags = tagsData.split(',');
+                            tagsEl.innerHTML = formatTags(tags);
+                        }
+                    }
                 });
                 confirmedExample = activeExample;
                 document.querySelectorAll('.demo-tag').forEach(function (t) {
@@ -349,6 +397,40 @@
                 actionsEl.style.display = 'none';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
+        })();
+
+        // 学校搜索补全
+        (function () {
+            function setupUniSearch(inputId, dropdownId, tagsId, hiddenId) {
+                var input = document.getElementById(inputId);
+                var dropdown = document.getElementById(dropdownId);
+                var tagsEl = document.getElementById(tagsId);
+                var hidden = document.getElementById(hiddenId);
+                if (!input) return;
+                input.addEventListener('input', function () {
+                    var results = searchUniversities(input.value);
+                    if (!results.length) { dropdown.classList.remove('visible'); return; }
+                    dropdown.innerHTML = '';
+                    results.forEach(function (u) {
+                        var item = document.createElement('div');
+                        item.className = 'uni-search-item';
+                        item.textContent = u.n + (u.t.length ? ' (' + u.t.join('/') + ')' : '');
+                        item.addEventListener('click', function () {
+                            input.value = u.n;
+                            dropdown.classList.remove('visible');
+                            tagsEl.innerHTML = formatTags(u.t);
+                            hidden.value = u.t.join(',');
+                        });
+                        dropdown.appendChild(item);
+                    });
+                    dropdown.classList.add('visible');
+                });
+                input.addEventListener('blur', function () {
+                    setTimeout(function () { dropdown.classList.remove('visible'); }, 200);
+                });
+            }
+            setupUniSearch('girl_edu_school', 'girl-uni-dropdown', 'girl-uni-tags', 'girl_edu_tags');
+            setupUniSearch('user_edu_school', 'user-uni-dropdown', 'user-uni-tags', 'user_edu_tags');
         })();
 
         // 主题切换
