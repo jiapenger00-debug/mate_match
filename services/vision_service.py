@@ -3,7 +3,9 @@
 import base64
 import json
 import logging
+import ssl
 
+import certifi
 import httpx
 from openai import OpenAI
 
@@ -24,9 +26,12 @@ class VisionBackend:
 class QwenBackend(VisionBackend):
     """阿里云 DashScope（通义千问 VL）后端。"""
     def __init__(self):
+        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+        http_client = httpx.Client(verify=ssl_ctx)
         self.client = OpenAI(
             api_key=QWEN_API_KEY,
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            http_client=http_client,
         )
 
     async def analyze(self, image_bytes: bytes, prompt: str) -> dict:
