@@ -256,29 +256,66 @@ uvicorn main:app --host 0.0.0.0 --port 8000  # 不加 --reload
 
 ## 发布到互联网
 
-详细指南见 **[docs/PORT-FORWARDING.md](PORT-FORWARDING.md)**，包含 4 种方案对比：
+本地启动的服务只有你自己能访问（`localhost:8000`）。要让朋友也能打开，需要一个**公网地址**。以下是本项目实际使用的方案：
 
-| 方案 | 费用 | 推荐场景 |
-|------|------|----------|
-| Cloudflare Tunnel | 免费 | 日常使用，推荐 |
-| Localtunnel | 免费 | 临时快速分享 |
-| ngrok | 免费有限制 | 需要 Web 调试界面 |
-| frp 自建 | 需云服务器 | 生产环境长期部署 |
+### 实战：Cloudflare Tunnel（推荐）
 
-### 快速开始（Cloudflare Tunnel）
+这是本项目实际采用的方式。原理：Cloudflare 在你的电脑和它的全球边缘节点之间建立一条加密隧道，外部请求通过隧道转发到你的本地服务，全程 HTTPS 自动加密。
+
+**第一步：启动 soul_match**
 
 ```bash
-# 安装
-winget install cloudflare.cloudflared
-
-# 启动服务（终端 1）
+# 终端 1：正常启动服务
 python main.py --api-key sk-xxx
+# 输出：Uvicorn running on http://0.0.0.0:8000
+```
 
-# 启动隧道（终端 2）
+**第二步：安装 Cloudflare 隧道客户端**
+
+```bash
+winget install cloudflare.cloudflared
+```
+
+安装完成后**重启终端**使命令生效。
+
+**第三步：启动隧道**
+
+```bash
+# 终端 2：启动隧道
 cloudflared tunnel --url localhost:8000
 ```
 
-运行后把生成的 `https://xxx.trycloudflare.com` 链接发给任何人即可访问。
+输出：
+
+```
++--------------------------------------------------------------------------------------------+
+|  Your quick Tunnel has been created! Visit it at:                                          |
+|  https://bold-roller-voted-foundations.trycloudflare.com                                   |
++--------------------------------------------------------------------------------------------+
+```
+
+**第四步：分享**
+
+把 `https://bold-roller-voted-foundations.trycloudflare.com` 发给任何人，他们就能打开你的 soul_match 网页。
+
+> ⚠️ 免费版每次重启隧道 URL 会变。如需固定域名，注册 Cloudflare 账号创建命名隧道即可（详见 `docs/PORT-FORWARDING.md`）。
+
+**本地 vs 公网访问对比：**
+
+```
+你电脑上的浏览器 → http://localhost:8000         ✅ 只有你能访问
+朋友手机/电脑    → https://xxx.trycloudflare.com  ✅ 全球都能访问
+```
+
+### 其他方案
+
+| 方案 | 命令 | 费用 | 特点 |
+|------|------|------|------|
+| **Cloudflare Tunnel** | `cloudflared tunnel --url localhost:8000` | 免费 | ✅ 本项目推荐 |
+| **Localtunnel** | `npx localtunnel --port 8000` | 免费 | 零安装，临时用 |
+| **ngrok** | `ngrok http 8000` | 免费有限制 | 有 Web 调试面板 |
+
+更详细的对比和配置见 **[docs/PORT-FORWARDING.md](PORT-FORWARDING.md)**。
 
 ### 部署到云服务器
 

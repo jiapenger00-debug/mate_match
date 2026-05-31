@@ -17,7 +17,20 @@ python main.py --api-key sk-你的密钥
 
 > 密钥通过命令行传入，不落盘。也可以用环境变量或 `.env` 文件，详见 [docs/USAGE.md](docs/USAGE.md)。
 
-> 📖 详细使用说明请参阅 [docs/USAGE.md](docs/USAGE.md)
+### 分享到公网
+
+本地启动后只有你能访问。要让朋友也能打开，用 Cloudflare Tunnel 免费生成一个公网地址：
+
+```bash
+# 终端 1：启动服务
+python main.py --api-key sk-xxx
+
+# 终端 2：安装并启动隧道
+winget install cloudflare.cloudflared
+cloudflared tunnel --url localhost:8000
+```
+
+运行后获得 `https://xxx.trycloudflare.com`，发给任何人即可访问。详见 [docs/PORT-FORWARDING.md](docs/PORT-FORWARDING.md)。
 
 ---
 
