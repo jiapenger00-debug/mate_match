@@ -150,6 +150,8 @@
         </section>
         {% endif %}
 
+        <button class="btn supplement-btn" onclick="openSupplement()" style="margin-top:0.5rem;background:transparent;border:1.5px solid var(--rose);color:var(--rose-light);">📝 补充信息，进一步分析</button>
+
         <a href="/" class="btn result-return-link">重新探索</a>
     </main>
 
@@ -178,6 +180,126 @@
                 toast.style.display = 'block';
                 setTimeout(function () { toast.style.display = 'none'; }, 2000);
             });
+        }
+    </script>
+
+    <div class="supplement-overlay" id="supplement-overlay">
+        <div class="supplement-modal">
+            <button class="supplement-close" onclick="closeSupplement()">✕</button>
+            <h3>补充信息</h3>
+            <p class="sub">补充更多细节，AI 将结合原报告重新分析</p>
+            <div class="supplement-targets">
+                <span class="supplement-target active" data-target="girl" onclick="selectTarget('girl', this)">👩 她</span>
+                <span class="supplement-target" data-target="user" onclick="selectTarget('user', this)">🧑 他</span>
+            </div>
+            <textarea class="supplement-textarea" id="supplement-text" placeholder="输入你想补充的任何信息…&#10;比如：她其实很会做饭、他的真实性格比描述的更外向、我们之前约会过几次感觉..."></textarea>
+            <div class="supplement-actions">
+                <label class="supplement-file-btn">📷 上传照片<input type="file" id="supplement-photo" accept="image/*" style="display:none" onchange="onSupplementPhoto(this)"></label>
+                <button class="supplement-file-btn" onclick="onSupplementOCR()">📋 截图OCR</button>
+            </div>
+            <div class="supplement-file-name" id="supplement-file-name"></div>
+            <button class="supplement-submit" onclick="submitSupplement()">🔍 进一步分析</button>
+        </div>
+    </div>
+    <script>
+        function compressImage(file, callback) {
+            if (file.size < 300 * 1024) { callback(file); return; }
+            var img = new Image();
+            img.onload = function () {
+                var maxW = 800, maxH = 800;
+                var w = img.width, h = img.height;
+                if (w > maxW || h > maxH) { var ratio = Math.min(maxW / w, maxH / h); w = Math.round(w * ratio); h = Math.round(h * ratio); }
+                var canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                if (canvas.toBlob) {
+                    canvas.toBlob(function (blob) { URL.revokeObjectURL(img.src); if (blob) callback(blob); else callback(file); }, 'image/jpeg', 0.5);
+                } else {
+                    try { var dataUrl = canvas.toDataURL('image/jpeg', 0.5); var bs = atob(dataUrl.split(',')[1]); var ab = new ArrayBuffer(bs.length); var ia = new Uint8Array(ab); for (var i=0;i<bs.length;i++) ia[i]=bs.charCodeAt(i); URL.revokeObjectURL(img.src); callback(new Blob([ab],{type:'image/jpeg'})); } catch(e) { callback(file); }
+                }
+            };
+            img.onerror = function () { callback(file); };
+            img.src = URL.createObjectURL(file);
+        }
+        var suppTarget = 'girl';
+        function openSupplement() { document.getElementById('supplement-overlay').classList.add('visible'); }
+        function closeSupplement() { document.getElementById('supplement-overlay').classList.remove('visible'); }
+        function selectTarget(t, el) {
+            suppTarget = t;
+            document.querySelectorAll('.supplement-target').forEach(function(s){s.classList.remove('active');});
+            el.classList.add('active');
+        }
+        function onSupplementPhoto(input) {
+            if (input.files[0]) document.getElementById('supplement-file-name').textContent = '已选择: ' + input.files[0].name;
+        }
+        function onSupplementOCR() {
+            var input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
+            input.onchange = function () {
+                var file = input.files[0];
+                if (!file) return;
+                compressImage(file, function (compressed) {
+                    var fd = new FormData(); fd.append('image', compressed, file.name);
+                    fetch('/api/ocr', { method: 'POST', body: fd })
+                        .then(function(r){return r.json();})
+                        .then(function(d){
+                            if (d.error) { alert('OCR失败: '+d.error); return; }
+                            var ta = document.getElementById('supplement-text');
+                            var parts = [];
+                            if (d.name) parts.push('姓名: '+d.name);
+                            if (d.age) parts.push('年龄: '+d.age);
+                            if (d.occupation) parts.push('职业: '+d.occupation);
+                            if (d.edu_school) parts.push('学校: '+d.edu_school);
+                            if (d.personality) parts.push('性格: '+d.personality);
+                            if (d.interests) parts.push('兴趣: '+d.interests);
+                            if (ta.value) ta.value += '\n\n--- OCR识别结果 ---\n' + parts.join('\n');
+                            else ta.value = '--- OCR识别结果 ---\n' + parts.join('\n');
+                        });
+                });
+            };
+            input.click();
+        }
+        function submitSupplement() {
+            var text = document.getElementById('supplement-text').value.trim();
+            var photo = document.getElementById('supplement-photo').files[0];
+            if (!text && !photo) { alert('请输入补充内容或上传照片'); return; }
+            var btn = document.querySelector('.supplement-submit');
+            btn.textContent = 'AI 正在重新分析…'; btn.disabled = true;
+            var fd = new FormData();
+            fd.append('share_id', '{{ share_id }}');
+            fd.append('target', suppTarget);
+            if (text) fd.append('text', text);
+            if (photo) compressImage(photo, function(c){ fd.append('photo', c, photo.name); doSubmit(); });
+            else doSubmit();
+            function doSubmit() {
+                fetch('/api/supplement', { method: 'POST', body: fd })
+                    .then(function(r){return r.json();})
+                    .then(function(data){
+                        if (data.error) { alert(data.error); btn.textContent='🔍 进一步分析'; btn.disabled=false; return; }
+                        closeSupplement();
+                        // 更新页面
+                        document.querySelector('.score-number').textContent = data.overall_score;
+                        var circle = document.querySelector('.score-circle');
+                        if (circle) circle.style.setProperty('--score', data.overall_score);
+                        var dimList = document.querySelector('.dimension-list');
+                        if (dimList && data.dimensions) {
+                            dimList.innerHTML = '';
+                            data.dimensions.forEach(function(d){
+                                dimList.innerHTML += '<li class="dimension-item"><div class="dimension-header"><span class="dimension-name">'+d.dimension+'</span><span class="dimension-score">'+d.score+' 分</span></div><div class="bar-wrap"><div class="bar-fill" style="width:'+d.score+'%;"></div></div><p class="dimension-comment">'+d.comment+'</p></li>';
+                            });
+                        }
+                        var blocks = document.querySelectorAll('.text-block');
+                        if (blocks.length >= 2 && data.summary) { blocks[0].textContent = data.summary; blocks[1].textContent = data.suggestion; }
+                        var levelTag = document.querySelector('.level-tag');
+                        if (levelTag && data.overall_score) {
+                            levelTag.className = 'level-tag';
+                            if (data.overall_score >= 85) { levelTag.classList.add('level-high'); levelTag.textContent = '💚 灵魂伴侣'; }
+                            else if (data.overall_score >= 75) { levelTag.classList.add('level-mid'); levelTag.textContent = '💛 心有灵犀'; }
+                            else if (data.overall_score >= 60) { levelTag.classList.add('level-mid'); levelTag.textContent = '🧡 渐入佳境'; }
+                            else { levelTag.classList.add('level-low'); levelTag.textContent = '❤️ 各有天地'; }
+                        }
+                        btn.textContent = '🔍 进一步分析'; btn.disabled = false;
+                    })
+                    .catch(function(){ alert('分析失败，请重试'); btn.textContent='🔍 进一步分析'; btn.disabled=false; });
+            }
         }
     </script>
 </body>

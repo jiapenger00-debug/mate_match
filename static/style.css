@@ -536,6 +536,25 @@ body::before {
 .photo-upload:hover { border-color: var(--rose); }
 .photo-upload-placeholder { color: var(--text-dim); font-size: 0.9rem; }
 
+/* ── 补充分析弹窗 ──────────────────────────── */
+.supplement-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(26,10,20,0.92); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; }
+.supplement-overlay.visible { display: flex; }
+.supplement-modal { background: var(--bg-mid); border: 1px solid var(--rose); border-radius: 20px; padding: 24px; max-width: 440px; width: 90%; position: relative; }
+.supplement-modal h3 { color: var(--cream); font-size: 1.1rem; margin-bottom: 4px; }
+.supplement-modal .sub { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 16px; }
+.supplement-close { position: absolute; top: 16px; right: 16px; color: var(--text-dim); font-size: 1.2rem; cursor: pointer; background: none; border: none; }
+.supplement-close:hover { color: var(--rose-light); }
+.supplement-targets { display: flex; gap: 8px; margin-bottom: 12px; }
+.supplement-target { padding: 6px 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 20px; color: var(--text-dim); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+.supplement-target.active { background: rgba(212,132,122,0.12); border-color: var(--rose); color: var(--rose-light); }
+.supplement-textarea { width: 100%; min-height: 100px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px; padding: 10px; color: var(--text); font-size: 0.9rem; font-family: inherit; resize: vertical; margin-bottom: 12px; }
+.supplement-actions { display: flex; gap: 8px; margin-bottom: 16px; }
+.supplement-file-btn { flex: 1; padding: 8px; background: transparent; border: 1px dashed var(--border); color: var(--text-dim); border-radius: 8px; font-size: 0.82rem; cursor: pointer; text-align: center; }
+.supplement-file-btn:hover { border-color: var(--rose); color: var(--rose-light); }
+.supplement-submit { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--rose-light), var(--rose)); color: var(--bg-deep); border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.supplement-submit:hover { box-shadow: 0 6px 24px var(--rose-glow); }
+.supplement-file-name { color: var(--text-dim); font-size: 0.78rem; margin-top: 4px; margin-bottom: 8px; }
+
 /* ── 响应式 ────────────────────────────────── */
 @media (max-width: 600px) {
     .form-row { grid-template-columns: 1fr; }
