@@ -25,14 +25,18 @@ for i, arg in enumerate(_args):
         os.environ["PORT"] = _args[i + 1]
 
 import logging
+import ssl
 from pathlib import Path
+
+import certifi
+import httpx
 
 from fastapi import FastAPI, Form, Request, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from config import HOST, PORT, DEEPSEEK_API_KEY
+from config import HOST, PORT, DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
 from models import GirlInfo, UserInfo, AnalyzeResponse, SearchResult
 from services import search_girl_info, analyze_matching, save_share, get_share
 
@@ -382,6 +386,77 @@ async def beauty_status(share_id: str):
     if isinstance(result, dict) and result.get("error"):
         return HTMLResponse(content='{"status":"error"}', media_type="application/json")
     return HTMLResponse(content=_json.dumps({"status":"done","data":result}, ensure_ascii=False), media_type="application/json")
+
+
+@app.post("/api/supplement")
+async def supplement_analysis(request: Request):
+    """接收补充信息，结合原报告重新分析。"""
+    from services.vision_service import analyze_supplement_photo
+    import json as _json
+
+    form = await request.form()
+    share_id = form.get("share_id", "")
+    girl_text = form.get("girl_text", "")
+    user_text = form.get("user_text", "")
+    girl_photo = form.get("girl_photo")
+    user_photo = form.get("user_photo")
+
+    # 读取原始数据
+    original = get_share(share_id)
+    if not original:
+        return HTMLResponse(content='{"error":"原始报告不存在"}', status_code=404, media_type="application/json")
+
+    # 处理补充照片
+    girl_photo_desc = ""
+    user_photo_desc = ""
+    if girl_photo:
+        try:
+            img_bytes = await girl_photo.read()
+            if img_bytes: girl_photo_desc = await analyze_supplement_photo(img_bytes)
+        except Exception as e: logger.warning(f"女方照片分析失败: {e}")
+    if user_photo:
+        try:
+            img_bytes = await user_photo.read()
+            if img_bytes: user_photo_desc = await analyze_supplement_photo(img_bytes)
+        except Exception as e: logger.warning(f"男方照片分析失败: {e}")
+
+    # 组装补充上下文
+    supplement_context = "[补充信息]\n"
+    if girl_text or girl_photo_desc:
+        supplement_context += "女方补充：\n"
+        if girl_text: supplement_context += f"{girl_text}\n"
+        if girl_photo_desc: supplement_context += f"照片描述：{girl_photo_desc}\n"
+    if user_text or user_photo_desc:
+        supplement_context += "男方补充：\n"
+        if user_text: supplement_context += f"{user_text}\n"
+        if user_photo_desc: supplement_context += f"照片描述：{user_photo_desc}\n"
+    supplement_context += "\n原始分析报告：\n"
+    supplement_context += f"综合匹配度：{original.get('overall_score')} 分\n"
+    supplement_context += f"各维度：{_json.dumps(original.get('dimensions', []), ensure_ascii=False)}\n"
+    supplement_context += f"综合评语：{original.get('summary', '')}\n"
+    supplement_context += "\n请基于以上补充信息和原始报告，重新分析两人匹配度，给出更新后的完整报告。"
+
+    # 调用 LLM 重新分析
+    try:
+        from openai import OpenAI
+        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+        http_client = httpx.Client(verify=ssl_ctx)
+        client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL, http_client=http_client)
+        resp = client.chat.completions.create(
+            model=DEEPSEEK_MODEL,
+            messages=[
+                {"role": "system", "content": "你是专业的感情分析专家。基于补充信息和原始报告，重新给出匹配度分析。返回 JSON：{\"overall_score\": 0-100, \"dimensions\": [{\"dimension\":\"维度名\",\"score\":0-100,\"comment\":\"评语\"}], \"summary\":\"综合评语\", \"suggestion\":\"发展建议\"}"},
+                {"role": "user", "content": supplement_context},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.7, max_tokens=2000,
+        )
+        raw = resp.choices[0].message.content
+        data = _json.loads(raw)
+        return HTMLResponse(content=_json.dumps({"overall_score": data.get("overall_score",0), "dimensions": data.get("dimensions",[]), "summary": data.get("summary",""), "suggestion": data.get("suggestion",""), "girl_photo_desc": girl_photo_desc, "user_photo_desc": user_photo_desc}, ensure_ascii=False), media_type="application/json")
+    except Exception as e:
+        logger.error(f"补充分析失败: {e}")
+        return HTMLResponse(content='{"error":"' + str(e) + '"}', status_code=500, media_type="application/json")
 
 
 @app.post("/api/share")

@@ -123,6 +123,22 @@ async def analyze_beauty(image_bytes: bytes) -> dict:
         return {"score": 0, "skin": "", "face_shape": "", "features": "", "overall": f"分析失败: {e}"}
 
 
+async def analyze_supplement_photo(image_bytes: bytes) -> str:
+    """分析补充照片，返回客观描述文本（非颜值评分）。"""
+    backend = get_backend()
+    prompt = """描述这张照片中的人物或场景。返回 JSON：
+{
+  "description": "客观描述照片内容：人物特征、穿着、场景、氛围等，50字以内。如果没有人脸，描述照片中的场景和信息"
+}
+只返回 JSON，不要其他文字。"""
+    try:
+        result = await backend.analyze(image_bytes, prompt)
+        return result.get("description", "")
+    except Exception as e:
+        logger.error(f"补充照片分析失败: {e}")
+        return ""
+
+
 async def ocr_extract(image_bytes: bytes) -> dict:
     """从截图/照片中提取个人信息。"""
     backend = get_backend()
