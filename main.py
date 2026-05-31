@@ -274,60 +274,63 @@ async def analyze(
             "search_results": [],
         })
 
-    # 步骤1：网络搜索（可选）
+    # 步骤1：网络搜索（可选，并行执行双方搜索）
     import json as _json
+    import asyncio as _asyncio
     search_results = None
-    # 女方搜索
-    if enable_search_girl:
+    user_search_results = None
+
+    async def _search_girl():
+        if not enable_search_girl: return None
         if selected_results:
             try:
                 raw = _json.loads(selected_results)
-                search_results = [SearchResult(title=r["title"], url=r.get("url",""), snippet=r["snippet"]) for r in raw]
-            except Exception:
-                pass
-        else:
-            extra_kw = " ".join(filter(None, [girl.occupation, girl.edu_level, girl.edu_school, girl.hometown]))
-            raw_results = await search_girl_info(girl.name, extra_kw)
-            search_results = raw_results if raw_results else None
-    # 男方搜索（与女方搜索同理，搜男方姓名+信息）
-    user_search_results = None
-    if enable_search_user:
+                return [SearchResult(title=r["title"], url=r.get("url",""), snippet=r["snippet"]) for r in raw]
+            except Exception: pass
+            return None
+        kw = " ".join(filter(None, [girl.occupation, girl.edu_level, girl.edu_school, girl.hometown]))
+        return await search_girl_info(girl.name, kw)
+
+    async def _search_user():
+        if not enable_search_user: return None
         if selected_results_user:
             try:
                 raw = _json.loads(selected_results_user)
-                user_search_results = [SearchResult(title=r["title"], url=r.get("url",""), snippet=r["snippet"]) for r in raw]
-            except Exception:
-                pass
-        else:
-            extra_kw = " ".join(filter(None, [user.occupation, user.edu_level, user.edu_school, user.hometown]))
-            raw_results = await search_girl_info(user.name, extra_kw)
-            user_search_results = raw_results if raw_results else None
+                return [SearchResult(title=r["title"], url=r.get("url",""), snippet=r["snippet"]) for r in raw]
+            except Exception: pass
+            return None
+        kw = " ".join(filter(None, [user.occupation, user.edu_level, user.edu_school, user.hometown]))
+        return await search_girl_info(user.name, kw)
+
+    search_results, user_search_results = await _asyncio.gather(_search_girl(), _search_user())
     logger.info(f"搜索到 女方{len(search_results or [])} + 男方{len(user_search_results or [])} 条结果")
 
-    # 步骤1.5：颜值分析（如有照片）
-    beauty_result = None
+    # 步骤1.5 + 步骤2：颜值分析 与 LLM 匹配分析 并行执行
+    beauty_task = _asyncio.ensure_future(_asyncio.sleep(0))  # 空占位
     if girl_photo or user_photo:
         from services.vision_service import analyze_beauty_pair as _beauty
-        try:
-            girl_bytes = await girl_photo.read() if girl_photo else None
-            user_bytes = await user_photo.read() if user_photo else None
-            if girl_bytes and user_bytes:
-                beauty_result = await _beauty(girl_bytes, user_bytes)
-                logger.info(f"颜值分析完成: {beauty_result.get('beauty_match')}")
-        except Exception as e:
-            logger.warning(f"颜值分析失败: {e}")
+        async def _do_beauty():
+            try:
+                gb = await girl_photo.read() if girl_photo else None
+                ub = await user_photo.read() if user_photo else None
+                if gb and ub:
+                    return await _beauty(gb, ub)
+            except Exception as e:
+                logger.warning(f"颜值分析失败: {e}")
+            return None
+        beauty_task = _asyncio.ensure_future(_do_beauty())
 
-    # 步骤2：调用 LLM 进行匹配分析
-    try:
-        result: AnalyzeResponse = await analyze_matching(girl, user, search_results, user_search_results)
-    except Exception as e:
-        logger.error(f"LLM 分析失败: {e}", exc_info=True)
-        result = AnalyzeResponse(
-            overall_score=0,
-            dimensions=[],
-            summary=f"分析服务暂时不可用，请稍后重试。错误信息：{e}",
-            suggestion="请检查 API Key 是否正确配置，或网络连接是否正常。",
-            search_results=search_results,
+    async def _do_llm():
+        try:
+            return await analyze_matching(girl, user, search_results, user_search_results)
+        except Exception as e:
+            logger.error(f"LLM 分析失败: {e}", exc_info=True)
+            return AnalyzeResponse(overall_score=0, dimensions=[], summary=f"分析服务暂时不可用，请稍后重试。错误信息：{e}", suggestion="请检查 API Key 是否正确配置，或网络连接是否正常。", search_results=search_results)
+    llm_task = _asyncio.ensure_future(_do_llm())
+
+    beauty_result, result = await _asyncio.gather(beauty_task, llm_task)
+    if beauty_result:
+        logger.info(f"颜值分析完成: {beauty_result.get('beauty_match')}")
         )
 
     # 步骤3：保存分享数据
