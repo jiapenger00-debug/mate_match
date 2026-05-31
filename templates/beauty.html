@@ -80,11 +80,12 @@
             document.getElementById('analyze-btn').style.display = (gf && uf) ? 'inline-block' : 'none';
         }
         function compressImage(file, callback) {
+            if (file.size < 300 * 1024) { callback(file); return; }
             var reader = new FileReader();
             reader.onload = function (e) {
                 var img = new Image();
                 img.onload = function () {
-                    var maxW = 1024, maxH = 1024;
+                    var maxW = 800, maxH = 800;
                     var w = img.width, h = img.height;
                     if (w > maxW || h > maxH) {
                         var ratio = Math.min(maxW / w, maxH / h);
@@ -93,7 +94,7 @@
                     var canvas = document.createElement('canvas');
                     canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    canvas.toBlob(function (blob) { callback(blob); }, 'image/jpeg', 0.7);
+                    canvas.toBlob(function (blob) { callback(blob); }, 'image/jpeg', 0.5);
                 };
                 img.src = e.target.result;
             };
