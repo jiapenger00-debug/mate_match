@@ -10,12 +10,12 @@
 
 ```bash
 pip install -r requirements.txt
-python main.py --api-key sk-你的密钥
+python main.py --api-key sk-你的DeepSeek密钥 --qwen-api-key sk-你的Qwen密钥
 ```
 
 浏览器打开 `http://localhost:8000`
 
-> 密钥通过命令行传入，不落盘。也可以用环境变量或 `.env` 文件，详见 [docs/USAGE.md](docs/USAGE.md)。
+> `--qwen-api-key` 可选，不传则截图OCR和颜值评分不可用。密钥均通过命令行传入，不落盘。详见 [docs/USAGE.md](docs/USAGE.md)。
 
 > 📖 详细使用说明请参阅 [docs/USAGE.md](docs/USAGE.md)
 
@@ -248,3 +248,22 @@ DEEPSEEK_API_KEY=sk-xxx
 1. 创建数据库模型（SQLAlchemy / SQLModel）
 2. 在 `main.py` 的 `/api/analyze` 中保存分析记录
 3. 新增 `/history` 路由查看历史分析
+
+---
+
+## TL;DR
+
+```bash
+# 安装
+pip install -r requirements.txt
+
+# 启动（DeepSeek 用于分析，Qwen 用于截图+颜值，可选）
+python main.py --api-key sk-DS密钥 --qwen-api-key sk-QW密钥
+
+# 打开 http://localhost:8000
+# 颜值 PK → http://localhost:8000/beauty
+
+# 分享到公网
+winget install cloudflare.cloudflared
+cloudflared tunnel --url localhost:8000
+```

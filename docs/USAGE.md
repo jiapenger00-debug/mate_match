@@ -22,7 +22,10 @@
 # 1. 安装依赖
 pip install -r requirements.txt
 
-# 2. 启动服务（命令行传入 API Key，无需创建任何文件）
+# 2. 启动服务（命令行传入两个 Key，不落盘）
+python main.py --api-key sk-你的DeepSeek密钥 --qwen-api-key sk-你的Qwen密钥
+
+# Qwen Key 可选（不传则截图OCR和颜值评分不可用）
 python main.py --api-key sk-你的密钥
 
 # 3. 浏览器打开
@@ -73,12 +76,13 @@ python main.py --api-key sk-你的密钥
 
 | 参数 | 说明 | 示例 |
 |------|------|------|
-| `--api-key` | DeepSeek API 密钥 | `--api-key sk-xxx` |
+| `--api-key` | DeepSeek API 密钥（必填） | `--api-key sk-xxx` |
+| `--qwen-api-key` | Qwen 视觉 API 密钥（可选，截图OCR/颜值需要） | `--qwen-api-key sk-xxx` |
 | `--host` | 服务监听地址 | `--host 127.0.0.1` |
 | `--port` | 服务端口 | `--port 3000` |
 
 ```bash
-python main.py --api-key sk-xxx --port 3000
+python main.py --api-key sk-xxx --qwen-api-key sk-xxx
 ```
 
 ### .env 文件（可选）
