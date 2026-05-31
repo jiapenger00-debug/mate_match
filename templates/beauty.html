@@ -48,6 +48,10 @@
         </div>
     </div>
 
+    <div style="text-align:center;padding:1rem;">
+        <button class="share-expand-btn" id="analyze-btn" style="display:none;font-size:1rem;padding:0.6rem 2rem;" onclick="startAnalysis()">开始颜值分析</button>
+    </div>
+
     <div class="beauty-match" id="beauty-match">
         <div class="beauty-match-score" id="match-score"></div>
         <div class="beauty-match-comment" id="match-comment"></div>
@@ -63,15 +67,16 @@
         function preview(input, who) {
             var file = input.files[0];
             if (!file) return;
-            submitted = false;
-            var upload = document.getElementById(who + '-upload');
-            upload.innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt=""><div class="beauty-upload-overlay">点击更换</div>';
-            upload.classList.add('has-photo');
-            upload.onclick = function () { document.getElementById(who + '-file').click(); };
+            document.getElementById(who + '-upload').innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt=""><div class="beauty-upload-overlay">点击更换</div>';
+            document.getElementById(who + '-upload').classList.add('has-photo');
+            document.getElementById(who + '-upload').onclick = function () { document.getElementById(who + '-file').click(); };
             document.getElementById(who + '-result').classList.remove('visible');
             document.getElementById(who + '-score').textContent = '-';
             document.getElementById(who + '-detail').textContent = '';
             document.getElementById('beauty-match').classList.remove('visible');
+            var gf = document.getElementById('girl-file').files[0];
+            var uf = document.getElementById('user-file').files[0];
+            document.getElementById('analyze-btn').style.display = (gf && uf) ? 'inline-block' : 'none';
         }
         function compressImage(file, callback) {
             var reader = new FileReader();
@@ -93,25 +98,23 @@
             };
             reader.readAsDataURL(file);
         }
-        var submitted = false;
-        function checkBoth() {
-            if (submitted) return;
+        function startAnalysis() {
             var gf = document.getElementById('girl-file').files[0];
             var uf = document.getElementById('user-file').files[0];
             if (!gf || !uf) return;
-            submitted = true;
+            document.getElementById('analyze-btn').style.display = 'none';
             document.getElementById('girl-score').textContent = '...';
             document.getElementById('user-score').textContent = '...';
             document.getElementById('girl-result').classList.add('visible');
             document.getElementById('user-result').classList.add('visible');
-            document.getElementById('girl-detail').textContent = '正在压缩图片…';
-            document.getElementById('user-detail').textContent = '正在压缩图片…';
+            document.getElementById('girl-detail').textContent = '正在压缩…';
+            document.getElementById('user-detail').textContent = '正在压缩…';
             var girlDone = false, userDone = false, girlData = null, userData = null;
             function sendOne(who, file) {
                 compressImage(file, function (compressed) {
+                    document.getElementById(who + '-detail').textContent = 'AI 正在分析中…';
                     var fd = new FormData();
                     fd.append('photo', compressed, who + '.jpg');
-                    document.getElementById(who + '-detail').textContent = 'AI 正在分析中…';
                     fetch('/api/beauty/single', { method: 'POST', body: fd })
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
@@ -119,15 +122,10 @@
                             showResult(who, data);
                             if (who === 'girl') { girlDone = true; girlData = data; }
                             else { userDone = true; userData = data; }
-                            if (girlDone && userDone) {
-                                showMatch(girlData, userData);
-                            }
-                        })
-                        .catch(function () { submitted = false; });
+                            if (girlDone && userDone) showMatch(girlData, userData);
+                        });
                 });
             }
-            document.getElementById('girl-detail').textContent = '正在压缩…';
-            document.getElementById('user-detail').textContent = '正在压缩…';
             sendOne('girl', gf);
             sendOne('user', uf);
         }
