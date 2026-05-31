@@ -375,7 +375,7 @@ async def analyze(
 async def beauty_status(share_id: str):
     """轮询颜值分析结果。"""
     import json as _json
-    result = _beauty_cache.pop(share_id, {"status": "not_found"})
+    result = _beauty_cache.get(share_id)
     if result is None:
         return HTMLResponse(content='{"status":"pending"}', media_type="application/json")
     if isinstance(result, dict) and result.get("error"):
