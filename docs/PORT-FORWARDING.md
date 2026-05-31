@@ -8,24 +8,7 @@
 
 稳定 HTTPS + 大文件支持。本项目实际使用，域名永久不变。
 
-### 前置条件
-1. Cloudflare 账号（绑卡验证身份即可，不扣费）
-2. 一个托管在 Cloudflare 的域名
-
-### 配置步骤
-```bash
-# 1. 登录
-cloudflared tunnel login
-
-# 2. 创建隧道
-cloudflared tunnel create soulmatch
-
-# 3. 在 Cloudflare DNS 后台添加 CNAME 记录
-#    名称: soulmatch → 目标: <tunnel-id>.cfargotunnel.com
-
-# 4. 启动
-cloudflared tunnel run --url localhost:8000 --protocol http2 soulmatch
-```
+详细步骤见 **[docs/CLOUDFLARE-NAMED-TUNNEL.md](CLOUDFLARE-NAMED-TUNNEL.md)**（保姆级教程，从零到上线）。
 
 本项目域名：`https://soulmatch.20260816.xyz`
 
