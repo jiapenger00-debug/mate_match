@@ -148,6 +148,15 @@
 
                 <div class="demo-tags" id="demo-tags"></div>
 
+                <div class="search-results-wrap" id="search-results-wrap">
+                    <p class="search-result-count" id="search-result-count"></p>
+                    <div class="search-results-list" id="search-results-list"></div>
+                    <div class="demo-actions">
+                        <button type="button" class="btn demo-btn-cancel" id="search-skip">跳过，直接分析</button>
+                        <button type="button" class="btn" id="search-confirm">确认选择的，开始分析</button>
+                    </div>
+                </div>
+
                 <div class="demo-preview" id="demo-preview" style="display:none;">
                     <div class="demo-preview-head">预览</div>
                     <div id="demo-preview-content"></div>
@@ -165,16 +174,105 @@
         </form>
     </main>
 
+    <div class="search-overlay" id="search-overlay">
+        <div class="search-overlay-text" id="search-overlay-text">正在搜索她的公开信息…</div>
+        <div class="search-progress"><div class="search-progress-bar"></div></div>
+        <p id="search-count" style="color:#9e8a8a;font-size:0.85rem;margin-top:0.8rem;"></p>
+    </div>
+
     <footer class="footer">
         <p>分析结果由 AI 生成，仅供参考</p>
     </footer>
 
     <script>
-        const form = document.getElementById('analyze-form');
-        const submitBtn = document.getElementById('submit-btn');
-        form.addEventListener('submit', function () {
+        var form = document.getElementById('analyze-form');
+        // 异步搜索 → 展示结果 → 确认 → 提交分析
+        var searchOverlay = document.getElementById('search-overlay');
+        var searchOverlayText = document.getElementById('search-overlay-text');
+        var searchCount = document.getElementById('search-count');
+        var searchResultsWrap = document.getElementById('search-results-wrap');
+        var searchResultCount = document.getElementById('search-result-count');
+        var searchResultsList = document.getElementById('search-results-list');
+        var searchSkip = document.getElementById('search-skip');
+        var searchConfirm = document.getElementById('search-confirm');
+        var submitBtn = document.getElementById('submit-btn');
+        var selectedResultsJson = '[]';
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var enableSearch = document.getElementById('enable_search').checked;
+            if (!enableSearch) {
+                submitAnalysis('[]');
+                return;
+            }
+            // 显示搜索动画
+            searchOverlay.classList.add('visible');
+            searchOverlayText.textContent = '正在搜索她的公开信息…';
+            searchCount.textContent = '';
             submitBtn.disabled = true;
-            submitBtn.textContent = '正在解读两颗心的距离…';
+            submitBtn.textContent = '搜索中…';
+
+            var fd = new FormData(form);
+            fetch('/api/search', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (results) {
+                    searchOverlay.classList.remove('visible');
+                    if (!results || !results.length) {
+                        submitAnalysis('[]'); return;
+                    }
+                    searchResultCount.textContent = '找到 ' + results.length + ' 条结果，勾选要参考的内容：';
+                    searchResultsList.innerHTML = '';
+                    results.forEach(function (r, i) {
+                        var card = document.createElement('div');
+                        card.className = 'search-result-card checked';
+                        card.innerHTML =
+                            '<input type="checkbox" checked data-idx="' + i + '">' +
+                            '<div class="search-result-body"><strong>' + r.title + '</strong><p>' + (r.snippet || '') + '</p></div>';
+                        card.addEventListener('click', function (ev) {
+                            if (ev.target.tagName === 'INPUT') return;
+                            var cb = card.querySelector('input');
+                            cb.checked = !cb.checked;
+                            card.classList.toggle('checked', cb.checked);
+                        });
+                        searchResultsList.appendChild(card);
+                    });
+                    searchResultsWrap.classList.add('visible');
+                    submitBtn.style.display = 'none';
+                })
+                .catch(function () {
+                    searchOverlay.classList.remove('visible');
+                    submitAnalysis('[]');
+                });
+        });
+
+        function submitAnalysis(selectedJson) {
+            searchResultsWrap.classList.remove('visible');
+            submitBtn.style.display = 'block';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'AI 正在分析中…';
+            searchOverlay.classList.add('visible');
+            searchOverlayText.textContent = '正在解读两颗心的距离…';
+            searchCount.textContent = '';
+            var fd = new FormData(form);
+            fd.append('selected_results', selectedJson);
+            fetch('/api/analyze', { method: 'POST', body: fd })
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    document.open(); document.write(html); document.close();
+                });
+        }
+
+        searchSkip.addEventListener('click', function () { submitAnalysis('[]'); });
+        searchConfirm.addEventListener('click', function () {
+            var checked = [];
+            document.querySelectorAll('.search-result-card input:checked').forEach(function (cb) {
+                var idx = parseInt(cb.getAttribute('data-idx'));
+                var card = cb.closest('.search-result-card');
+                var titleEl = card.querySelector('strong');
+                var snippetEl = card.querySelector('p');
+                checked.push({ title: titleEl.textContent, url: '', snippet: snippetEl ? snippetEl.textContent : '' });
+            });
+            submitAnalysis(JSON.stringify(checked));
         });
 
         // 示例选择器

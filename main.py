@@ -75,6 +75,28 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+@app.post("/api/search")
+async def search_only(
+    request: Request,
+    girl_name: str = Form(""),
+    girl_hometown: str = Form(""),
+    girl_occupation: str = Form(""),
+    girl_education: str = Form(""),
+):
+    """仅执行搜索，返回结果列表 JSON，不调用 LLM。"""
+    name = girl_name.strip()
+    extra_kw = " ".join(filter(None, [girl_occupation, girl_education, girl_hometown]))
+    results = await search_girl_info(name, extra_kw)
+    import json as _json
+    return HTMLResponse(
+        content=_json.dumps(
+            [{"title": r.title, "url": r.url, "snippet": r.snippet} for r in results],
+            ensure_ascii=False
+        ),
+        media_type="application/json"
+    )
+
+
 @app.post("/api/analyze", response_class=HTMLResponse)
 async def analyze(
     request: Request,
@@ -102,6 +124,7 @@ async def analyze(
     user_extra: str = Form(""),
     # ── 选项 ──
     enable_search: bool = Form(True),
+    selected_results: str = Form(""),
 ):
     """核心分析接口：接收表单数据，执行搜索 + LLM 分析，返回结果页"""
 
@@ -150,12 +173,19 @@ async def analyze(
     # 步骤1：网络搜索（可选）
     search_results = None
     if enable_search:
-        # 组合搜索关键词
-        extra_kw = " ".join(
-            filter(None, [girl.occupation, girl.education, girl.hometown])
-        )
-        raw_results = await search_girl_info(girl.name, extra_kw)
-        search_results = raw_results if raw_results else None
+        import json as _json
+        if selected_results:
+            try:
+                raw = _json.loads(selected_results)
+                search_results = [SearchResult(title=r["title"], url=r.get("url",""), snippet=r["snippet"]) for r in raw]
+            except Exception:
+                pass
+        else:
+            extra_kw = " ".join(
+                filter(None, [girl.occupation, girl.education, girl.hometown])
+            )
+            raw_results = await search_girl_info(girl.name, extra_kw)
+            search_results = raw_results if raw_results else None
         logger.info(f"搜索到 {len(search_results or [])} 条结果")
 
     # 步骤2：调用 LLM 进行匹配分析
