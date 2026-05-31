@@ -331,7 +331,6 @@ async def analyze(
     beauty_result, result = await _asyncio.gather(beauty_task, llm_task)
     if beauty_result:
         logger.info(f"颜值分析完成: {beauty_result.get('beauty_match')}")
-        )
 
     # 步骤3：保存分享数据
     share_id = None
