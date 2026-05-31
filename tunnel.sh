@@ -10,8 +10,8 @@ echo ""
 
 # 方案1：Serveo（零安装，可固定域名）
 if command -v ssh &> /dev/null; then
-    echo "→ 尝试 Serveo（SSH 隧道，可固定子域名）..."
-    ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -R soulmatch:80:localhost:$PORT serveo.net 2>&1
+    echo "→ 尝试 Serveo（SSH 隧道，免费 HTTPS）..."
+    ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -R 80:localhost:$PORT serveo.net 2>&1
     EXIT_CODE=$?
     if [ $EXIT_CODE -eq 0 ] || [ $EXIT_CODE -eq 130 ]; then
         exit 0
