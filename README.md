@@ -277,7 +277,7 @@ python main.py --api-key sk-DS密钥 --qwen-api-key sk-QW密钥
 http://localhost:8000          # 匹配分析
 http://localhost:8000/beauty   # 颜值 PK
 
-# 分享到公网（两种方式）
-cloudflared tunnel --url localhost:8000    # Cloudflare Tunnel
-npx localtunnel --port 8000               # Localtunnel（备用）
+# 公网固定域名（需 Cloudflare 账号 + 域名）
+# 详见 docs/PORT-FORWARDING.md
+bash tunnel.sh
 ```

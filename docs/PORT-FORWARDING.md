@@ -4,19 +4,38 @@
 
 ---
 
-## 方式一：Localtunnel（推荐，稳定免费）
+## 方式一：Cloudflare 命名隧道（推荐，固定域名）
 
-零安装，一条命令，支持大文件上传（截图 OCR、颜值分析）。
+稳定 HTTPS + 大文件支持。本项目实际使用，域名永久不变。
 
+### 前置条件
+1. Cloudflare 账号（绑卡验证身份即可，不扣费）
+2. 一个托管在 Cloudflare 的域名
+
+### 配置步骤
 ```bash
-npx localtunnel --port 8000
+# 1. 登录
+cloudflared tunnel login
+
+# 2. 创建隧道
+cloudflared tunnel create soulmatch
+
+# 3. 在 Cloudflare DNS 后台添加 CNAME 记录
+#    名称: soulmatch → 目标: <tunnel-id>.cfargotunnel.com
+
+# 4. 启动
+cloudflared tunnel run --url localhost:8000 --protocol http2 soulmatch
 ```
 
-首次访问会有一个提示页，点击「Click to Continue」即可。实测最稳定。
+本项目域名：`https://soulmatch.20260816.xyz`
 
 ---
 
-## 方式二：Cloudflare Tunnel（免费，偶尔不稳）
+## 方式二：Localtunnel（最简单，零门槛）
+
+---
+
+## 方式三：Cloudflare 快速隧道（免费，偶尔不稳）
 
 ### 安装
 
@@ -75,29 +94,6 @@ cloudflared tunnel run soulmatch --url localhost:8000
 
 ---
 
-## 方式三：Localtunnel 命令行详解
-
-无需安装任何东西，直接通过 npx 运行：
-
-```bash
-npx localtunnel --port 8000
-```
-
-输出：
-
-```
-your url is: https://xxxx.loca.lt
-```
-
-### 特点
-
-| 优势 | 劣势 |
-|------|------|
-| 零安装，一条命令 | 每次 URL 会变 |
-| 免费 | 偶尔不稳定 |
-| 有访问密码页面 | 中国大陆可能被墙 |
-
----
 
 ## 方式四：ngrok
 
@@ -122,7 +118,7 @@ ngrok http 8000
 
 ---
 
-## 方式四：frp（自建，最可控）
+## 方式五：frp（自建，最可控）
 
 如果有自己的云服务器，用 frp 自建内网穿透。
 
