@@ -202,7 +202,7 @@
             e.preventDefault();
             var enableSearch = document.getElementById('enable_search').checked;
             if (!enableSearch) {
-                submitAnalysis('[]');
+                submitAnalysis('');
                 return;
             }
             // 显示搜索动画
@@ -218,7 +218,7 @@
                 .then(function (results) {
                     searchOverlay.classList.remove('visible');
                     if (!results || !results.length) {
-                        submitAnalysis('[]'); return;
+                        submitAnalysis(''); return;
                     }
                     searchResultCount.textContent = '找到 ' + results.length + ' 条结果，勾选要参考的内容：';
                     searchResultsList.innerHTML = '';
@@ -241,7 +241,7 @@
                 })
                 .catch(function () {
                     searchOverlay.classList.remove('visible');
-                    submitAnalysis('[]');
+                    submitAnalysis('');
                 });
         });
 
