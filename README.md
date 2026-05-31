@@ -267,16 +267,16 @@ DEEPSEEK_API_KEY=sk-xxx
 ## TL;DR
 
 ```bash
-# 安装
 pip install -r requirements.txt
 
-# 启动（DeepSeek 用于分析，Qwen 用于截图+颜值，可选）
+# 启动（两个 Key 都不落盘）
 python main.py --api-key sk-DS密钥 --qwen-api-key sk-QW密钥
 
-# 打开 http://localhost:8000
-# 颜值 PK → http://localhost:8000/beauty
+# 本地访问
+http://localhost:8000          # 匹配分析
+http://localhost:8000/beauty   # 颜值 PK
 
-# 分享到公网
-winget install cloudflare.cloudflared
-cloudflared tunnel --url localhost:8000
+# 分享到公网（两种方式）
+cloudflared tunnel --url localhost:8000    # Cloudflare Tunnel
+npx localtunnel --port 8000               # Localtunnel（备用）
 ```
