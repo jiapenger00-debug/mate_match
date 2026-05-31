@@ -25,7 +25,7 @@ for i, arg in enumerate(_args):
 import logging
 from pathlib import Path
 
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form, Request, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -97,6 +97,74 @@ async def search_only(
     )
 
 
+@app.post("/api/ocr")
+async def ocr_import(request: Request):
+    """接收截图/照片，用多模态 LLM 提取个人信息。"""
+    from services.vision_service import ocr_extract
+
+    form = await request.form()
+    image_file = form.get("image")
+    if not image_file:
+        return HTMLResponse(
+            content='{"error": "未上传图片"}',
+            status_code=400, media_type="application/json"
+        )
+
+    try:
+        image_bytes = await image_file.read()
+        result = await ocr_extract(image_bytes)
+        import json as _json
+        return HTMLResponse(
+            content=_json.dumps(result, ensure_ascii=False),
+            media_type="application/json"
+        )
+    except Exception as e:
+        logger.error(f"OCR 解析失败: {e}")
+        return HTMLResponse(
+            content='{"error": "' + str(e) + '"}',
+            status_code=500, media_type="application/json"
+        )
+
+
+@app.get("/beauty", response_class=HTMLResponse)
+async def beauty_page(request: Request):
+    """颜值 PK 页面。"""
+    return templates.TemplateResponse("beauty.html", {"request": request})
+
+
+@app.post("/api/beauty")
+async def analyze_beauty_api(request: Request):
+    """接收双方照片，返回颜值评分。"""
+    from services.vision_service import analyze_beauty_pair
+
+    form = await request.form()
+    girl_file = form.get("girl_photo")
+    user_file = form.get("user_photo")
+
+    if not girl_file or not user_file:
+        return HTMLResponse(
+            content='{"error": "请上传双方照片"}',
+            status_code=400, media_type="application/json"
+        )
+
+    try:
+        girl_bytes = await girl_file.read()
+        user_bytes = await user_file.read()
+        result = await analyze_beauty_pair(girl_bytes, user_bytes)
+        import json as _json
+        return HTMLResponse(
+            content=_json.dumps(result, ensure_ascii=False),
+            media_type="application/json"
+        )
+    except Exception as e:
+        logger.error(f"颜值分析失败: {e}")
+        import json as _json
+        return HTMLResponse(
+            content=_json.dumps({"error": str(e)}, ensure_ascii=False),
+            status_code=500, media_type="application/json"
+        )
+
+
 @app.post("/api/analyze", response_class=HTMLResponse)
 async def analyze(
     request: Request,
@@ -129,6 +197,8 @@ async def analyze(
     # ── 选项 ──
     enable_search: bool = Form(True),
     selected_results: str = Form(""),
+    girl_photo: UploadFile | None = File(None),
+    user_photo: UploadFile | None = File(None),
 ):
     """核心分析接口：接收表单数据，执行搜索 + LLM 分析，返回结果页"""
 
@@ -196,6 +266,19 @@ async def analyze(
             search_results = raw_results if raw_results else None
         logger.info(f"搜索到 {len(search_results or [])} 条结果")
 
+    # 步骤1.5：颜值分析（如有照片）
+    beauty_result = None
+    if girl_photo or user_photo:
+        from services.vision_service import analyze_beauty_pair as _beauty
+        try:
+            girl_bytes = await girl_photo.read() if girl_photo else None
+            user_bytes = await user_photo.read() if user_photo else None
+            if girl_bytes and user_bytes:
+                beauty_result = await _beauty(girl_bytes, user_bytes)
+                logger.info(f"颜值分析完成: {beauty_result.get('beauty_match')}")
+        except Exception as e:
+            logger.warning(f"颜值分析失败: {e}")
+
     # 步骤2：调用 LLM 进行匹配分析
     try:
         result: AnalyzeResponse = await analyze_matching(girl, user, search_results)
@@ -237,6 +320,7 @@ async def analyze(
         "suggestion": result.suggestion,
         "search_results": result.search_results or [],
         "share_id": share_id or "",
+        "beauty": beauty_result,
     })
 
 

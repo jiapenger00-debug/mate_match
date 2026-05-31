@@ -70,3 +70,22 @@ class AnalyzeResponse(BaseModel):
     summary: str = Field(..., description="综合评语")
     suggestion: str = Field(..., description="发展建议")
     search_results: Optional[list[SearchResult]] = Field(None, description="网络搜索结果")
+
+
+# ── 颜值评分相关模型 ──────────────────────────────────
+
+class BeautyScore(BaseModel):
+    """颜值评分结果"""
+    score: float = Field(default=0.0, ge=0, le=10, description="颜值分数 1-10")
+    skin: str = Field(default="", description="肤质评价")
+    face_shape: str = Field(default="", description="脸型")
+    features: str = Field(default="", description="五官特点")
+    overall: str = Field(default="", description="整体印象")
+
+
+class BeautyPairResult(BaseModel):
+    """双方颜值分析结果"""
+    girl: BeautyScore = Field(default_factory=BeautyScore)
+    user: BeautyScore = Field(default_factory=BeautyScore)
+    beauty_match: int = Field(default=0, ge=0, le=100)
+    beauty_comment: str = Field(default="")

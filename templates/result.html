@@ -71,6 +71,28 @@
         </section>
         {% endif %}
 
+        {% if beauty %}
+        <section class="card">
+            <h2>颜值分析</h2>
+            <div style="display:flex;gap:2rem;text-align:center;">
+                <div style="flex:1;">
+                    <div style="font-size:2rem;font-weight:700;color:var(--rose-light);">{{ "%.1f"|format(beauty.girl.score) }}</div>
+                    <div style="color:var(--text-dim);font-size:0.8rem;">女方颜值</div>
+                    <div style="color:var(--text-dim);font-size:0.78rem;margin-top:4px;">{{ beauty.girl.overall }}</div>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:2rem;font-weight:700;color:var(--rose-light);">{{ "%.1f"|format(beauty.user.score) }}</div>
+                    <div style="color:var(--text-dim);font-size:0.8rem;">男方颜值</div>
+                    <div style="color:var(--text-dim);font-size:0.78rem;margin-top:4px;">{{ beauty.user.overall }}</div>
+                </div>
+            </div>
+            <div style="text-align:center;margin-top:1rem;">
+                <span style="color:var(--gold);font-size:1.1rem;font-weight:600;">颜值匹配度：{{ beauty.beauty_match }} 分</span>
+                <p style="color:var(--text-dim);font-size:0.82rem;">{{ beauty.beauty_comment }}</p>
+            </div>
+        </section>
+        {% endif %}
+
         <!-- 综合评语 -->
         {% if summary %}
         <section class="card">
