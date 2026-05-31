@@ -1,6 +1,7 @@
 #!/bin/bash
 # soul_match 公网隧道启动脚本
 # 用法: bash tunnel.sh
+# 如果用到固定域名的话，需要将固定域名放到环境变量中，示例：
 # export SOULMATCH_DOMAIN=soulmatch.20260816.xyz  # ← 取消注释使用固定域名
 
 PORT=${PORT:-8000}
