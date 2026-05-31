@@ -4,9 +4,19 @@
 
 ---
 
-## 方式一：Cloudflare Tunnel（推荐，完全免费）
+## 方式一：Serveo（推荐，可固定域名）
 
-使用 Cloudflare 的免费隧道服务，无需注册账号，一条命令即可获得公网 HTTPS 地址。
+使用 SSH 隧道，零安装，免费，注册后可固定子域名。
+
+```bash
+ssh -R soulmatch:80:localhost:8000 serveo.net
+```
+
+首次使用去 https://console.serveo.net 用 Google/GitHub 登录注册 SSH 公钥，之后 URL 固定为 `https://soulmatch.serveo.net`。
+
+---
+
+## 方式二：Cloudflare Tunnel（免费，URL 随机）
 
 ### 安装
 
