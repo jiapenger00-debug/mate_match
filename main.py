@@ -183,6 +183,7 @@ async def analyze(
     girl_interests: str = Form(""),
     girl_values: str = Form(""),
     girl_extra: str = Form(""),
+    girl_requirements: str = Form(""),
     # ── 用户信息 ──
     user_name: str = Form(...),
     user_age: str = Form(""),
@@ -196,6 +197,7 @@ async def analyze(
     user_interests: str = Form(""),
     user_values: str = Form(""),
     user_extra: str = Form(""),
+    user_requirements: str = Form(""),
     # ── 选项 ──
     enable_search: bool = Form(True),
     selected_results: str = Form(""),
@@ -218,6 +220,7 @@ async def analyze(
         interests=girl_interests.strip() or None,
         values=girl_values.strip() or None,
         extra_info=girl_extra.strip() or None,
+        requirements=girl_requirements.strip() or None,
     )
 
     user = UserInfo(
@@ -233,6 +236,7 @@ async def analyze(
         interests=user_interests.strip() or None,
         values=user_values.strip() or None,
         extra_info=user_extra.strip() or None,
+        requirements=user_requirements.strip() or None,
     )
 
     logger.info(f"收到分析请求: {girl.name} × {user.name}, 搜索={enable_search}")

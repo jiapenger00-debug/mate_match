@@ -79,6 +79,8 @@ def build_user_message(
         parts.append(f"- 价值观/人生追求：{girl.values}")
     if girl.extra_info:
         parts.append(f"- 补充信息：{girl.extra_info}")
+    if girl.requirements:
+        parts.append(f"- 对对方的要求：{girl.requirements}")
 
     # 搜索结果补充
     if search_results:
@@ -115,6 +117,8 @@ def build_user_message(
         parts.append(f"- 价值观/人生追求：{user.values}")
     if user.extra_info:
         parts.append(f"- 补充信息：{user.extra_info}")
+    if user.requirements:
+        parts.append(f"- 对对方的要求：{user.requirements}")
 
     parts.append("\n请基于以上信息，综合分析两人的匹配程度。")
     return "\n".join(parts)

@@ -22,6 +22,7 @@ class GirlInfo(BaseModel):
     values: Optional[str] = Field(None, max_length=2000, description="价值观/人生追求")
     appearance: Optional[str] = Field(None, max_length=500, description="外貌特征")
     extra_info: Optional[str] = Field(None, max_length=2000, description="补充信息")
+    requirements: Optional[str] = Field(None, max_length=2000, description="对对方的要求")
 
 
 class UserInfo(BaseModel):
@@ -38,6 +39,7 @@ class UserInfo(BaseModel):
     values: Optional[str] = Field(None, max_length=2000, description="价值观/人生追求")
     appearance: Optional[str] = Field(None, max_length=500)
     extra_info: Optional[str] = Field(None, max_length=2000)
+    requirements: Optional[str] = Field(None, max_length=2000, description="对对方的要求")
 
 
 class AnalyzeRequest(BaseModel):
