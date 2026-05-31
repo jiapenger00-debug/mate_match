@@ -36,6 +36,9 @@ from config import HOST, PORT, DEEPSEEK_API_KEY
 from models import GirlInfo, UserInfo, AnalyzeResponse, SearchResult
 from services import search_girl_info, analyze_matching, save_share, get_share
 
+# 颜值分析结果暂存（后台线程写入，轮询端点读取）
+_beauty_cache: dict[str, dict | None] = {}
+
 # ── 日志 ──────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
@@ -305,20 +308,28 @@ async def analyze(
     search_results, user_search_results = await _asyncio.gather(_search_girl(), _search_user())
     logger.info(f"搜索到 女方{len(search_results or [])} + 男方{len(user_search_results or [])} 条结果")
 
-    # 步骤1.5 + 步骤2：颜值分析 与 LLM 匹配分析 并行执行
-    beauty_task = _asyncio.ensure_future(_asyncio.sleep(0))  # 空占位
+    # 提前生成 share_id（用于后续异步更新颜值结果）
+    import secrets as _secrets
+    import threading as _threading
+    share_id = _secrets.token_urlsafe(4).replace("-","").replace("_","")[:6]
+    _beauty_cache[share_id] = None  # None = 还在分析中
+
+    # 颜值分析后台线程运行
     if girl_photo or user_photo:
         from services.vision_service import analyze_beauty_pair as _beauty
-        async def _do_beauty():
+        def _do_beauty_sync(sid):
             try:
-                gb = await girl_photo.read() if girl_photo else None
-                ub = await user_photo.read() if user_photo else None
+                gb = girl_photo.file.read() if girl_photo else None
+                ub = user_photo.file.read() if user_photo else None
                 if gb and ub:
-                    return await _beauty(gb, ub)
-            except Exception as e:
-                logger.warning(f"颜值分析失败: {e}")
-            return None
-        beauty_task = _asyncio.ensure_future(_do_beauty())
+                    loop = _asyncio.new_event_loop()
+                    _asyncio.set_event_loop(loop)
+                    result = loop.run_until_complete(_beauty(gb, ub))
+                    loop.close()
+                    _beauty_cache[sid] = result
+            except Exception:
+                _beauty_cache[sid] = {"error": True}
+        _threading.Thread(target=_do_beauty_sync, args=(share_id,), daemon=True).start()
 
     async def _do_llm():
         try:
@@ -326,11 +337,7 @@ async def analyze(
         except Exception as e:
             logger.error(f"LLM 分析失败: {e}", exc_info=True)
             return AnalyzeResponse(overall_score=0, dimensions=[], summary=f"分析服务暂时不可用，请稍后重试。错误信息：{e}", suggestion="请检查 API Key 是否正确配置，或网络连接是否正常。", search_results=search_results)
-    llm_task = _asyncio.ensure_future(_do_llm())
-
-    beauty_result, result = await _asyncio.gather(beauty_task, llm_task)
-    if beauty_result:
-        logger.info(f"颜值分析完成: {beauty_result.get('beauty_match')}")
+    result = await _do_llm()
 
     # 步骤3：保存分享数据
     share_id = None
@@ -360,8 +367,20 @@ async def analyze(
         "suggestion": result.suggestion,
         "search_results": result.search_results or [],
         "share_id": share_id or "",
-        "beauty": beauty_result,
+        "beauty_pending": bool(girl_photo or user_photo),
     })
+
+
+@app.get("/api/beauty-status/{share_id}")
+async def beauty_status(share_id: str):
+    """轮询颜值分析结果。"""
+    import json as _json
+    result = _beauty_cache.pop(share_id, {"status": "not_found"})
+    if result is None:
+        return HTMLResponse(content='{"status":"pending"}', media_type="application/json")
+    if isinstance(result, dict) and result.get("error"):
+        return HTMLResponse(content='{"status":"error"}', media_type="application/json")
+    return HTMLResponse(content=_json.dumps({"status":"done","data":result}, ensure_ascii=False), media_type="application/json")
 
 
 @app.post("/api/share")

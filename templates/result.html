@@ -71,26 +71,39 @@
         </section>
         {% endif %}
 
-        {% if beauty %}
-        <section class="card">
+        {% if beauty_pending %}
+        <section class="card" id="beauty-section">
             <h2>颜值分析</h2>
-            <div style="display:flex;gap:2rem;text-align:center;">
-                <div style="flex:1;">
-                    <div style="font-size:2rem;font-weight:700;color:var(--rose-light);">{{ "%.1f"|format(beauty.girl.score) }}</div>
-                    <div style="color:var(--text-dim);font-size:0.8rem;">女方颜值</div>
-                    <div style="color:var(--text-dim);font-size:0.78rem;margin-top:4px;">{{ beauty.girl.overall }}</div>
-                </div>
-                <div style="flex:1;">
-                    <div style="font-size:2rem;font-weight:700;color:var(--rose-light);">{{ "%.1f"|format(beauty.user.score) }}</div>
-                    <div style="color:var(--text-dim);font-size:0.8rem;">男方颜值</div>
-                    <div style="color:var(--text-dim);font-size:0.78rem;margin-top:4px;">{{ beauty.user.overall }}</div>
-                </div>
-            </div>
-            <div style="text-align:center;margin-top:1rem;">
-                <span style="color:var(--gold);font-size:1.1rem;font-weight:600;">颜值匹配度：{{ beauty.beauty_match }} 分</span>
-                <p style="color:var(--text-dim);font-size:0.82rem;">{{ beauty.beauty_comment }}</p>
+            <div style="text-align:center;padding:1.5rem;">
+                <p id="beauty-status" style="color:var(--text-dim);">AI 正在分析中…</p>
+                <div class="spinner" style="margin:1rem auto;"></div>
             </div>
         </section>
+        <script>
+            (function () {
+                var sid = '{{ share_id }}';
+                if (!sid) return;
+                var poll = setInterval(function () {
+                    fetch('/api/beauty-status/' + sid)
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d.status === 'done') {
+                                clearInterval(poll);
+                                var s = document.getElementById('beauty-section');
+                                var b = d.data;
+                                s.innerHTML = '<h2>颜值分析</h2>' +
+                                    '<div style="display:flex;gap:2rem;text-align:center;">' +
+                                    '<div style="flex:1;"><div style="font-size:2rem;font-weight:700;color:var(--rose-light);">' + b.girl.score.toFixed(1) + '</div><div style="color:var(--text-dim);font-size:0.8rem;">女方颜值</div><div style="color:var(--text-dim);font-size:0.78rem;margin-top:4px;">' + (b.girl.overall||'') + '</div></div>' +
+                                    '<div style="flex:1;"><div style="font-size:2rem;font-weight:700;color:var(--rose-light);">' + b.user.score.toFixed(1) + '</div><div style="color:var(--text-dim);font-size:0.8rem;">男方颜值</div><div style="color:var(--text-dim);font-size:0.78rem;margin-top:4px;">' + (b.user.overall||'') + '</div></div></div>' +
+                                    '<div style="text-align:center;margin-top:1rem;"><span style="color:var(--gold);font-size:1.1rem;font-weight:600;">颜值匹配度：' + b.beauty_match + ' 分</span><p style="color:var(--text-dim);font-size:0.82rem;">' + b.beauty_comment + '</p></div>';
+                            } else if (d.status === 'error') {
+                                clearInterval(poll);
+                                document.getElementById('beauty-status').textContent = '颜值分析失败';
+                            }
+                        });
+                }, 2000);
+            })();
+        </script>
         {% endif %}
 
         <!-- 综合评语 -->
