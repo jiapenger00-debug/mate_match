@@ -20,14 +20,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # 安装依赖
 pip install -r requirements.txt
 
-# 启动开发服务器（命令行传入 API Key，不落盘）
-python main.py --api-key sk-xxx
+# 启动开发服务器（命令行传入 Key，不落盘）
+python main.py --api-key sk-DS密钥 --qwen-api-key sk-QW密钥
 
-# 指定端口
+# Qwen Key 可选，不传则截图OCR/颜值评分不可用
 python main.py --api-key sk-xxx --port 3000
 
 # 生产部署（环境变量方式）
-DEEPSEEK_API_KEY=sk-xxx uvicorn main:app --host 0.0.0.0 --port 8000
+DEEPSEEK_API_KEY=sk-xxx QWEN_API_KEY=sk-xxx uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 ## 项目结构

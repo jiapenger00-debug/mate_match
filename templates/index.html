@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#1a0a14">
     <title>灵魂契合度 · 匹配分析</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/universities.js"></script>
     <script src="/static/demo-data.js"></script>
 </head>
 <body>
@@ -32,10 +33,11 @@
     </header>
 
     <main class="container" id="main-content">
-        <form id="analyze-form" action="/api/analyze" method="POST">
+        <form id="analyze-form" action="/api/analyze" method="POST" enctype="multipart/form-data">
             <!-- 女方信息 -->
             <section class="card">
                 <h2>她</h2>
+                <button type="button" class="ocr-import-btn" id="girl-ocr-btn" title="截图导入女方信息">📷 截图导入</button>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="girl_name">名字</label>
@@ -55,9 +57,27 @@
                         <label for="girl_occupation">职业</label>
                         <input type="text" id="girl_occupation" name="girl_occupation" placeholder="设计师…">
                     </div>
-                    <div class="form-group">
-                        <label for="girl_education">学历</label>
-                        <input type="text" id="girl_education" name="girl_education" placeholder="本科…">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="girl_edu_level">学历</label>
+                            <select id="girl_edu_level" name="girl_edu_level" style="width:100%;padding:0.7rem 0.9rem;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text);font-size:0.93rem;font-family:inherit;">
+                                <option value="">请选择…</option>
+                                <option value="高中/中专">高中/中专</option>
+                                <option value="大专">大专</option>
+                                <option value="本科">本科</option>
+                                <option value="硕士">硕士</option>
+                                <option value="MBA">MBA</option>
+                                <option value="博士">博士</option>
+                                <option value="博士后">博士后</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group uni-search-wrap">
+                            <label for="girl_edu_school">学校</label>
+                            <input type="text" id="girl_edu_school" name="girl_edu_school" autocomplete="off" placeholder="输入学校名称…">
+                            <div class="uni-search-dropdown" id="girl-uni-dropdown"></div>
+                            <div class="uni-tags" id="girl-uni-tags"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="girl_appearance">外貌特征</label>
@@ -83,12 +103,23 @@
                         <textarea id="girl_extra" name="girl_extra"
                                   placeholder="任何你想记录的…"></textarea>
                     </div>
+                    <input type="hidden" name="girl_edu_tags" id="girl_edu_tags">
+                    <div class="form-group full photo-upload-wrap">
+                        <label>照片（选填，用于颜值分析）</label>
+                        <div class="photo-upload" onclick="document.getElementById('girl_photo').click()">
+                            <span class="photo-upload-placeholder">+ 上传女方照片</span>
+                            <img id="girl-photo-preview" style="display:none;max-width:100%;max-height:200px;border-radius:8px;">
+                        </div>
+                        <input type="file" id="girl_photo" name="girl_photo" accept="image/*" style="display:none"
+                               onchange="photoPreview(this, 'girl')">
+                    </div>
                 </div>
             </section>
 
             <!-- 用户信息 -->
             <section class="card">
                 <h2>你</h2>
+                <button type="button" class="ocr-import-btn" id="user-ocr-btn" title="截图导入你的信息">📷 截图导入</button>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="user_name">名字</label>
@@ -108,9 +139,27 @@
                         <label for="user_occupation">职业</label>
                         <input type="text" id="user_occupation" name="user_occupation" placeholder="工程师…">
                     </div>
-                    <div class="form-group">
-                        <label for="user_education">学历</label>
-                        <input type="text" id="user_education" name="user_education" placeholder="硕士…">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="user_edu_level">学历</label>
+                            <select id="user_edu_level" name="user_edu_level" style="width:100%;padding:0.7rem 0.9rem;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text);font-size:0.93rem;font-family:inherit;">
+                                <option value="">请选择…</option>
+                                <option value="高中/中专">高中/中专</option>
+                                <option value="大专">大专</option>
+                                <option value="本科">本科</option>
+                                <option value="硕士">硕士</option>
+                                <option value="MBA">MBA</option>
+                                <option value="博士">博士</option>
+                                <option value="博士后">博士后</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group uni-search-wrap">
+                            <label for="user_edu_school">学校</label>
+                            <input type="text" id="user_edu_school" name="user_edu_school" autocomplete="off" placeholder="输入学校名称…">
+                            <div class="uni-search-dropdown" id="user-uni-dropdown"></div>
+                            <div class="uni-tags" id="user-uni-tags"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="user_appearance">外貌特征</label>
@@ -135,6 +184,16 @@
                         <label for="user_extra">更多关于你</label>
                         <textarea id="user_extra" name="user_extra"
                                   placeholder="任何你想说的…"></textarea>
+                    </div>
+                    <input type="hidden" name="user_edu_tags" id="user_edu_tags">
+                    <div class="form-group full photo-upload-wrap">
+                        <label>照片（选填，用于颜值分析）</label>
+                        <div class="photo-upload" onclick="document.getElementById('user_photo').click()">
+                            <span class="photo-upload-placeholder">+ 上传你的照片</span>
+                            <img id="user-photo-preview" style="display:none;max-width:100%;max-height:200px;border-radius:8px;">
+                        </div>
+                        <input type="file" id="user_photo" name="user_photo" accept="image/*" style="display:none"
+                               onchange="photoPreview(this, 'user')">
                     </div>
                 </div>
             </section>
@@ -186,6 +245,16 @@
     </footer>
 
     <script>
+        function photoPreview(input, who) {
+            var file = input.files[0];
+            if (!file) return;
+            var preview = document.getElementById(who + '-photo-preview');
+            var placeholder = input.parentElement.querySelector('.photo-upload-placeholder');
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = 'block';
+            if (placeholder) placeholder.style.display = 'none';
+        }
+
         var form = document.getElementById('analyze-form');
         // 异步搜索 → 展示结果 → 确认 → 提交分析
         var searchOverlay = document.getElementById('search-overlay');
@@ -339,6 +408,15 @@
                         var el = document.getElementById(who + '_' + htmlKey);
                         if (el && data[key] !== undefined) el.value = data[key];
                     });
+                    // Show university tags if school is filled
+                    var tagsData = data['edu_tags'];
+                    if (tagsData) {
+                        var tagsEl = document.getElementById(who + '-uni-tags');
+                        if (tagsEl) {
+                            var tags = tagsData.split(',');
+                            tagsEl.innerHTML = formatTags(tags);
+                        }
+                    }
                 });
                 confirmedExample = activeExample;
                 document.querySelectorAll('.demo-tag').forEach(function (t) {
@@ -350,6 +428,137 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         })();
+
+        // 学校搜索补全
+        (function () {
+            function setupUniSearch(inputId, dropdownId, tagsId, hiddenId) {
+                var input = document.getElementById(inputId);
+                var dropdown = document.getElementById(dropdownId);
+                var tagsEl = document.getElementById(tagsId);
+                var hidden = document.getElementById(hiddenId);
+                if (!input) return;
+                input.addEventListener('input', function () {
+                    var results = searchUniversities(input.value);
+                    if (!results.length) { dropdown.classList.remove('visible'); return; }
+                    dropdown.innerHTML = '';
+                    results.forEach(function (u) {
+                        var item = document.createElement('div');
+                        item.className = 'uni-search-item';
+                        item.textContent = u.n + (u.t.length ? ' (' + u.t.join('/') + ')' : '');
+                        item.addEventListener('click', function () {
+                            input.value = u.n;
+                            dropdown.classList.remove('visible');
+                            tagsEl.innerHTML = formatTags(u.t);
+                            hidden.value = u.t.join(',');
+                        });
+                        dropdown.appendChild(item);
+                    });
+                    dropdown.classList.add('visible');
+                });
+                input.addEventListener('blur', function () {
+                    setTimeout(function () { dropdown.classList.remove('visible'); }, 200);
+                });
+            }
+            setupUniSearch('girl_edu_school', 'girl-uni-dropdown', 'girl-uni-tags', 'girl_edu_tags');
+            setupUniSearch('user_edu_school', 'user-uni-dropdown', 'user-uni-tags', 'user_edu_tags');
+        })();
+
+        // 截图导入
+        var ocrBtnGirl = document.getElementById('girl-ocr-btn');
+        var ocrBtnUser = document.getElementById('user-ocr-btn');
+
+        function ocrImport(who) {
+            var input = document.createElement('input');
+            input.type = 'file'; input.accept = 'image/*';
+            input.onchange = function () {
+                var file = input.files[0];
+                if (!file) return;
+                var overlay = document.getElementById('search-overlay');
+                var text = document.getElementById('search-overlay-text');
+                if (overlay) overlay.classList.add('visible');
+                if (text) text.textContent = '正在识别截图内容…';
+                var fd = new FormData();
+                fd.append('image', file);
+                fetch('/api/ocr', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (overlay) overlay.classList.remove('visible');
+                        if (data.error) { alert(data.error); return; }
+                        var prefix = who + '_';
+                        if (data.name) setOcrVal(prefix + 'name', data.name);
+                        if (data.age) setOcrVal(prefix + 'age', String(data.age));
+                        if (data.hometown) setOcrVal(prefix + 'hometown', data.hometown);
+                        if (data.occupation) setOcrVal(prefix + 'occupation', data.occupation);
+                        if (data.edu_level) setOcrVal(prefix + 'edu_level', data.edu_level);
+                        if (data.edu_school) {
+                            var sch = document.getElementById(prefix + 'edu_school');
+                            if (sch) { sch.value = data.edu_school; sch.dispatchEvent(new Event('input')); }
+                        }
+                        if (data.personality) setOcrVal(prefix + 'personality', data.personality);
+                        if (data.interests) setOcrVal(prefix + 'interests', data.interests);
+                        if (data.values) setOcrVal(prefix + 'values', data.values);
+                        if (data.appearance) setOcrVal(prefix + 'appearance', data.appearance);
+                    })
+                    .catch(function () {
+                        if (overlay) overlay.classList.remove('visible');
+                        alert('识别失败，请重试');
+                    });
+            };
+            input.click();
+        }
+
+        function setOcrVal(id, val) {
+            var el = document.getElementById(id);
+            if (el && val) { el.value = val; el.style.borderColor = '#50b478'; }
+        }
+
+        if (ocrBtnGirl) ocrBtnGirl.addEventListener('click', function () { ocrImport('girl'); });
+        if (ocrBtnUser) ocrBtnUser.addEventListener('click', function () { ocrImport('user'); });
+
+        // Ctrl+V 粘贴图片 — 自动识别填入
+        document.addEventListener('paste', function (e) {
+            var items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') >= 0) {
+                    e.preventDefault();
+                    var blob = items[i].getAsFile();
+                    var overlay = document.getElementById('search-overlay');
+                    var text = document.getElementById('search-overlay-text');
+                    if (overlay) overlay.classList.add('visible');
+                    if (text) text.textContent = '正在识别截图内容…';
+                    var fd = new FormData();
+                    fd.append('image', blob);
+                    fetch('/api/ocr', { method: 'POST', body: fd })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (overlay) overlay.classList.remove('visible');
+                            if (data.error) { alert(data.error); return; }
+                            // 优先填入空字段
+                            Object.keys(data).forEach(function (key) {
+                                if (data[key]) {
+                                    var gId = 'girl_' + key, uId = 'user_' + key;
+                                    var gEl = document.getElementById(gId);
+                                    var uEl = document.getElementById(uId);
+                                    if (gEl && !gEl.value) setOcrVal(gId, String(data[key]));
+                                    else if (uEl && !uEl.value) setOcrVal(uId, String(data[key]));
+                                    else if (gEl) setOcrVal(gId, String(data[key]));
+                                }
+                            });
+                            // 处理学校字段的特殊情况
+                            ['edu_school'].forEach(function (k) {
+                                if (data[k]) {
+                                    var gSch = document.getElementById('girl_' + k), uSch = document.getElementById('user_' + k);
+                                    if (gSch) { gSch.value = data[k]; gSch.dispatchEvent(new Event('input')); }
+                                    if (uSch) { uSch.value = data[k]; uSch.dispatchEvent(new Event('input')); }
+                                }
+                            });
+                        })
+                        .catch(function () { if (overlay) overlay.classList.remove('visible'); });
+                    break;
+                }
+            }
+        });
 
         // 主题切换
         (function () {

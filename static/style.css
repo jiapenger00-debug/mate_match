@@ -506,6 +506,28 @@ body::before {
 .search-result-body p { color: var(--text-dim); margin-top: 2px; font-size: 0.78rem; }
 .search-result-count { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 0.5rem; }
 
+/* ── 学历学校搜索 ──────────────────────────── */
+.uni-search-wrap { position: relative; }
+.uni-search-dropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 50; background: var(--bg-mid); border: 1px solid var(--border); border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; display: none; }
+.uni-search-dropdown.visible { display: block; }
+.uni-search-item { padding: 8px 12px; cursor: pointer; font-size: 0.85rem; color: var(--text); border-bottom: 1px solid var(--border); }
+.uni-search-item:hover { background: rgba(212,132,122,0.08); }
+.uni-search-item:last-child { border-bottom: none; }
+.uni-tags { margin-top: 4px; font-size: 0.75rem; }
+.uni-tag { display: inline-block; padding: 1px 6px; border-radius: 3px; margin-right: 4px; font-weight: 600; font-size: 0.7rem; }
+.tag-985 { background: rgba(212,132,122,0.15); color: var(--rose-light); }
+.tag-211 { background: rgba(201,169,110,0.15); color: var(--gold); }
+.tag-dyl { background: rgba(80,180,120,0.12); color: #6fd89a; }
+
+/* ── OCR 截图导入按钮 ──────────────────────── */
+.ocr-import-btn { float: right; padding: 4px 12px; background: transparent; border: 1px solid var(--rose); color: var(--rose-light); border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+.ocr-import-btn:hover { background: rgba(212,132,122,0.1); }
+
+/* ── 照片上传 ──────────────────────────────── */
+.photo-upload { width: 100%; min-height: 100px; border: 2px dashed var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 0.3s; overflow: hidden; }
+.photo-upload:hover { border-color: var(--rose); }
+.photo-upload-placeholder { color: var(--text-dim); font-size: 0.9rem; }
+
 /* ── 响应式 ────────────────────────────────── */
 @media (max-width: 600px) {
     .form-row { grid-template-columns: 1fr; }

@@ -2,21 +2,23 @@
 FastAPI 主入口 —— 灵魂契合度分析 Web 应用。
 
 启动方式:
-    python main.py --api-key sk-xxx                   # 命令行传入密钥
-    python main.py --api-key sk-xxx --port 3000       # 指定端口
-    uvicorn main:app --reload --host 0.0.0.0 --port 8000  # 需先配 .env
+    python main.py --api-key sk-xxx --qwen-api-key sk-xxx     # 两个 Key 都通过命令行传入
+    python main.py --api-key sk-xxx --port 3000               # 只用 DeepSeek
+    uvicorn main:app --reload --host 0.0.0.0 --port 8000     # 需先配 .env
 """
 
 import os
 import sys
 
 # ── 命令行参数解析（必须在导入项目模块之前）───────────
-# 支持: python main.py --api-key sk-xxx [--host 0.0.0.0] [--port 8000]
-_cli_keys = {"--api-key", "--host", "--port"}
+# 支持: python main.py --api-key sk-xxx --qwen-api-key sk-xxx [--host 0.0.0.0] [--port 8000]
+_cli_keys = {"--api-key", "--qwen-api-key", "--host", "--port"}
 _args = sys.argv[1:]
 for i, arg in enumerate(_args):
     if arg == "--api-key" and i + 1 < len(_args):
         os.environ["DEEPSEEK_API_KEY"] = _args[i + 1]
+    elif arg == "--qwen-api-key" and i + 1 < len(_args):
+        os.environ["QWEN_API_KEY"] = _args[i + 1]
     elif arg == "--host" and i + 1 < len(_args):
         os.environ["HOST"] = _args[i + 1]
     elif arg == "--port" and i + 1 < len(_args):
@@ -25,7 +27,7 @@ for i, arg in enumerate(_args):
 import logging
 from pathlib import Path
 
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form, Request, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -80,11 +82,12 @@ async def search_only(
     girl_name: str = Form(""),
     girl_hometown: str = Form(""),
     girl_occupation: str = Form(""),
-    girl_education: str = Form(""),
+    girl_edu_level: str = Form(""),
+    girl_edu_school: str = Form(""),
 ):
     """仅执行搜索，返回结果列表 JSON，不调用 LLM。"""
     name = girl_name.strip()
-    extra_kw = " ".join(filter(None, [girl_occupation, girl_education, girl_hometown]))
+    extra_kw = " ".join(filter(None, [girl_occupation, girl_edu_level, girl_edu_school, girl_hometown]))
     results = await search_girl_info(name, extra_kw)
     import json as _json
     return HTMLResponse(
@@ -96,6 +99,74 @@ async def search_only(
     )
 
 
+@app.post("/api/ocr")
+async def ocr_import(request: Request):
+    """接收截图/照片，用多模态 LLM 提取个人信息。"""
+    from services.vision_service import ocr_extract
+
+    form = await request.form()
+    image_file = form.get("image")
+    if not image_file:
+        return HTMLResponse(
+            content='{"error": "未上传图片"}',
+            status_code=400, media_type="application/json"
+        )
+
+    try:
+        image_bytes = await image_file.read()
+        result = await ocr_extract(image_bytes)
+        import json as _json
+        return HTMLResponse(
+            content=_json.dumps(result, ensure_ascii=False),
+            media_type="application/json"
+        )
+    except Exception as e:
+        logger.error(f"OCR 解析失败: {e}")
+        return HTMLResponse(
+            content='{"error": "' + str(e) + '"}',
+            status_code=500, media_type="application/json"
+        )
+
+
+@app.get("/beauty", response_class=HTMLResponse)
+async def beauty_page(request: Request):
+    """颜值 PK 页面。"""
+    return templates.TemplateResponse("beauty.html", {"request": request})
+
+
+@app.post("/api/beauty")
+async def analyze_beauty_api(request: Request):
+    """接收双方照片，返回颜值评分。"""
+    from services.vision_service import analyze_beauty_pair
+
+    form = await request.form()
+    girl_file = form.get("girl_photo")
+    user_file = form.get("user_photo")
+
+    if not girl_file or not user_file:
+        return HTMLResponse(
+            content='{"error": "请上传双方照片"}',
+            status_code=400, media_type="application/json"
+        )
+
+    try:
+        girl_bytes = await girl_file.read()
+        user_bytes = await user_file.read()
+        result = await analyze_beauty_pair(girl_bytes, user_bytes)
+        import json as _json
+        return HTMLResponse(
+            content=_json.dumps(result, ensure_ascii=False),
+            media_type="application/json"
+        )
+    except Exception as e:
+        logger.error(f"颜值分析失败: {e}")
+        import json as _json
+        return HTMLResponse(
+            content=_json.dumps({"error": str(e)}, ensure_ascii=False),
+            status_code=500, media_type="application/json"
+        )
+
+
 @app.post("/api/analyze", response_class=HTMLResponse)
 async def analyze(
     request: Request,
@@ -104,7 +175,9 @@ async def analyze(
     girl_age: str = Form(""),
     girl_hometown: str = Form(""),
     girl_occupation: str = Form(""),
-    girl_education: str = Form(""),
+    girl_edu_level: str = Form(""),
+    girl_edu_school: str = Form(""),
+    girl_edu_tags: str = Form(""),
     girl_appearance: str = Form(""),
     girl_personality: str = Form(""),
     girl_interests: str = Form(""),
@@ -115,7 +188,9 @@ async def analyze(
     user_age: str = Form(""),
     user_hometown: str = Form(""),
     user_occupation: str = Form(""),
-    user_education: str = Form(""),
+    user_edu_level: str = Form(""),
+    user_edu_school: str = Form(""),
+    user_edu_tags: str = Form(""),
     user_appearance: str = Form(""),
     user_personality: str = Form(""),
     user_interests: str = Form(""),
@@ -124,6 +199,8 @@ async def analyze(
     # ── 选项 ──
     enable_search: bool = Form(True),
     selected_results: str = Form(""),
+    girl_photo: UploadFile | None = File(None),
+    user_photo: UploadFile | None = File(None),
 ):
     """核心分析接口：接收表单数据，执行搜索 + LLM 分析，返回结果页"""
 
@@ -133,7 +210,9 @@ async def analyze(
         age=_parse_int(girl_age),
         hometown=girl_hometown.strip() or None,
         occupation=girl_occupation.strip() or None,
-        education=girl_education.strip() or None,
+        edu_level=girl_edu_level.strip() or None,
+        edu_school=girl_edu_school.strip() or None,
+        edu_tags=girl_edu_tags.strip() or None,
         appearance=girl_appearance.strip() or None,
         personality=girl_personality.strip() or None,
         interests=girl_interests.strip() or None,
@@ -146,7 +225,9 @@ async def analyze(
         age=_parse_int(user_age),
         hometown=user_hometown.strip() or None,
         occupation=user_occupation.strip() or None,
-        education=user_education.strip() or None,
+        edu_level=user_edu_level.strip() or None,
+        edu_school=user_edu_school.strip() or None,
+        edu_tags=user_edu_tags.strip() or None,
         appearance=user_appearance.strip() or None,
         personality=user_personality.strip() or None,
         interests=user_interests.strip() or None,
@@ -181,11 +262,24 @@ async def analyze(
                 pass
         else:
             extra_kw = " ".join(
-                filter(None, [girl.occupation, girl.education, girl.hometown])
+                filter(None, [girl.occupation, girl.edu_level, girl.edu_school, girl.hometown])
             )
             raw_results = await search_girl_info(girl.name, extra_kw)
             search_results = raw_results if raw_results else None
         logger.info(f"搜索到 {len(search_results or [])} 条结果")
+
+    # 步骤1.5：颜值分析（如有照片）
+    beauty_result = None
+    if girl_photo or user_photo:
+        from services.vision_service import analyze_beauty_pair as _beauty
+        try:
+            girl_bytes = await girl_photo.read() if girl_photo else None
+            user_bytes = await user_photo.read() if user_photo else None
+            if girl_bytes and user_bytes:
+                beauty_result = await _beauty(girl_bytes, user_bytes)
+                logger.info(f"颜值分析完成: {beauty_result.get('beauty_match')}")
+        except Exception as e:
+            logger.warning(f"颜值分析失败: {e}")
 
     # 步骤2：调用 LLM 进行匹配分析
     try:
@@ -228,6 +322,7 @@ async def analyze(
         "suggestion": result.suggestion,
         "search_results": result.search_results or [],
         "share_id": share_id or "",
+        "beauty": beauty_result,
     })
 
 
@@ -274,7 +369,12 @@ if __name__ == "__main__":
         print("获取免费 API Key: https://platform.deepseek.com")
         print("=" * 55)
         print("")
-        print("将以无 API Key 模式启动，分析功能将不可用。")
+
+    from config import QWEN_API_KEY
+    if not QWEN_API_KEY:
+        print("[INFO] 未设置 Qwen API Key（截图OCR/颜值评分不可用）")
+        print("      命令行: python main.py --qwen-api-key sk-xxx")
+        print("      获取免费 Key: https://dashscope.aliyun.com/")
         print("")
 
     print(f"Server starting at http://{HOST}:{PORT}")
