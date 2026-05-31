@@ -478,8 +478,9 @@
                 var text = document.getElementById('search-overlay-text');
                 if (overlay) overlay.classList.add('visible');
                 if (text) text.textContent = '正在识别截图内容…';
+                compressImage(file, function (compressed) {
                 var fd = new FormData();
-                fd.append('image', file);
+                fd.append('image', compressed, file.name);
                 fetch('/api/ocr', { method: 'POST', body: fd })
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
@@ -504,8 +505,30 @@
                         if (overlay) overlay.classList.remove('visible');
                         alert('识别失败，请重试');
                     });
+                });
             };
             input.click();
+        }
+
+        function compressImage(file, callback) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var img = new Image();
+                img.onload = function () {
+                    var maxW = 1024, maxH = 1024;
+                    var w = img.width, h = img.height;
+                    if (w > maxW || h > maxH) {
+                        var ratio = Math.min(maxW / w, maxH / h);
+                        w = Math.round(w * ratio); h = Math.round(h * ratio);
+                    }
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    canvas.toBlob(function (blob) { callback(blob); }, 'image/jpeg', 0.7);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         function setOcrVal(id, val) {
@@ -528,14 +551,14 @@
                     var text = document.getElementById('search-overlay-text');
                     if (overlay) overlay.classList.add('visible');
                     if (text) text.textContent = '正在识别截图内容…';
+                    compressImage(blob, function (compressed) {
                     var fd = new FormData();
-                    fd.append('image', blob);
+                    fd.append('image', compressed, 'paste.jpg');
                     fetch('/api/ocr', { method: 'POST', body: fd })
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
                             if (overlay) overlay.classList.remove('visible');
                             if (data.error) { alert(data.error); return; }
-                            // 优先填入空字段
                             Object.keys(data).forEach(function (key) {
                                 if (data[key]) {
                                     var gId = 'girl_' + key, uId = 'user_' + key;
@@ -546,7 +569,6 @@
                                     else if (gEl) setOcrVal(gId, String(data[key]));
                                 }
                             });
-                            // 处理学校字段的特殊情况
                             ['edu_school'].forEach(function (k) {
                                 if (data[k]) {
                                     var gSch = document.getElementById('girl_' + k), uSch = document.getElementById('user_' + k);
@@ -556,6 +578,7 @@
                             });
                         })
                         .catch(function () { if (overlay) overlay.classList.remove('visible'); });
+                    });
                     break;
                 }
             }
