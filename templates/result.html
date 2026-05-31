@@ -187,18 +187,28 @@
         <div class="supplement-modal">
             <button class="supplement-close" onclick="closeSupplement()">✕</button>
             <h3>补充信息</h3>
-            <p class="sub">补充更多细节，AI 将结合原报告重新分析</p>
-            <div class="supplement-targets">
-                <span class="supplement-target active" data-target="girl" onclick="selectTarget('girl', this)">👩 她</span>
-                <span class="supplement-target" data-target="user" onclick="selectTarget('user', this)">🧑 他</span>
+            <p class="sub">补充更多细节（选填），AI 将结合原报告重新分析</p>
+            <div style="display:flex;gap:12px;">
+                <div style="flex:1;">
+                    <div style="color:var(--cream);font-size:0.9rem;margin-bottom:6px;">👩 关于她</div>
+                    <textarea class="supplement-textarea" id="supplement-girl-text" placeholder="补充女方的信息…"></textarea>
+                    <div class="supplement-actions">
+                        <label class="supplement-file-btn">📷 照片<input type="file" id="supplement-girl-photo" accept="image/*" style="display:none" onchange="onSuppPhoto(this,'girl')"></label>
+                        <button class="supplement-file-btn" onclick="onSuppOCR('girl')">📋 OCR</button>
+                    </div>
+                    <div class="supplement-file-name" id="supplement-girl-fname"></div>
+                </div>
+                <div style="flex:1;">
+                    <div style="color:var(--cream);font-size:0.9rem;margin-bottom:6px;">🧑 关于他</div>
+                    <textarea class="supplement-textarea" id="supplement-user-text" placeholder="补充男方的信息…"></textarea>
+                    <div class="supplement-actions">
+                        <label class="supplement-file-btn">📷 照片<input type="file" id="supplement-user-photo" accept="image/*" style="display:none" onchange="onSuppPhoto(this,'user')"></label>
+                        <button class="supplement-file-btn" onclick="onSuppOCR('user')">📋 OCR</button>
+                    </div>
+                    <div class="supplement-file-name" id="supplement-user-fname"></div>
+                </div>
             </div>
-            <textarea class="supplement-textarea" id="supplement-text" placeholder="输入你想补充的任何信息…&#10;比如：她其实很会做饭、他的真实性格比描述的更外向、我们之前约会过几次感觉..."></textarea>
-            <div class="supplement-actions">
-                <label class="supplement-file-btn">📷 上传照片<input type="file" id="supplement-photo" accept="image/*" style="display:none" onchange="onSupplementPhoto(this)"></label>
-                <button class="supplement-file-btn" onclick="onSupplementOCR()">📋 截图OCR</button>
-            </div>
-            <div class="supplement-file-name" id="supplement-file-name"></div>
-            <button class="supplement-submit" onclick="submitSupplement()">🔍 进一步分析</button>
+            <button class="supplement-submit" onclick="submitSupplement()" style="margin-top:12px;">🔍 进一步分析</button>
         </div>
     </div>
     <script>
@@ -220,29 +230,22 @@
             img.onerror = function () { callback(file); };
             img.src = URL.createObjectURL(file);
         }
-        var suppTarget = 'girl';
         function openSupplement() { document.getElementById('supplement-overlay').classList.add('visible'); }
         function closeSupplement() { document.getElementById('supplement-overlay').classList.remove('visible'); }
-        function selectTarget(t, el) {
-            suppTarget = t;
-            document.querySelectorAll('.supplement-target').forEach(function(s){s.classList.remove('active');});
-            el.classList.add('active');
+        function onSuppPhoto(input, who) {
+            if (input.files[0]) document.getElementById('supplement-' + who + '-fname').textContent = '已选: ' + input.files[0].name;
         }
-        function onSupplementPhoto(input) {
-            if (input.files[0]) document.getElementById('supplement-file-name').textContent = '已选择: ' + input.files[0].name;
-        }
-        function onSupplementOCR() {
+        function onSuppOCR(who) {
             var input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
             input.onchange = function () {
-                var file = input.files[0];
-                if (!file) return;
+                var file = input.files[0]; if (!file) return;
                 compressImage(file, function (compressed) {
                     var fd = new FormData(); fd.append('image', compressed, file.name);
                     fetch('/api/ocr', { method: 'POST', body: fd })
                         .then(function(r){return r.json();})
                         .then(function(d){
                             if (d.error) { alert('OCR失败: '+d.error); return; }
-                            var ta = document.getElementById('supplement-text');
+                            var ta = document.getElementById('supplement-' + who + '-text');
                             var parts = [];
                             if (d.name) parts.push('姓名: '+d.name);
                             if (d.age) parts.push('年龄: '+d.age);
@@ -250,25 +253,31 @@
                             if (d.edu_school) parts.push('学校: '+d.edu_school);
                             if (d.personality) parts.push('性格: '+d.personality);
                             if (d.interests) parts.push('兴趣: '+d.interests);
-                            if (ta.value) ta.value += '\n\n--- OCR识别结果 ---\n' + parts.join('\n');
-                            else ta.value = '--- OCR识别结果 ---\n' + parts.join('\n');
+                            if (d.appearance) parts.push('外貌: '+d.appearance);
+                            if (ta.value) ta.value += '\n\n--- OCR识别 ---\n' + parts.join('\n');
+                            else ta.value = '--- OCR识别 ---\n' + parts.join('\n');
                         });
                 });
             };
             input.click();
         }
         function submitSupplement() {
-            var text = document.getElementById('supplement-text').value.trim();
-            var photo = document.getElementById('supplement-photo').files[0];
-            if (!text && !photo) { alert('请输入补充内容或上传照片'); return; }
+            var gText = document.getElementById('supplement-girl-text').value.trim();
+            var uText = document.getElementById('supplement-user-text').value.trim();
+            var gPhoto = document.getElementById('supplement-girl-photo').files[0];
+            var uPhoto = document.getElementById('supplement-user-photo').files[0];
+            if (!gText && !uText && !gPhoto && !uPhoto) { alert('请至少补充一方信息'); return; }
             var btn = document.querySelector('.supplement-submit');
             btn.textContent = 'AI 正在重新分析…'; btn.disabled = true;
             var fd = new FormData();
             fd.append('share_id', '{{ share_id }}');
-            fd.append('target', suppTarget);
-            if (text) fd.append('text', text);
-            if (photo) compressImage(photo, function(c){ fd.append('photo', c, photo.name); doSubmit(); });
-            else doSubmit();
+            fd.append('girl_text', gText);
+            fd.append('user_text', uText);
+            var pending = 0;
+            function checkDone() { pending--; if (pending <= 0) doSubmit(); }
+            if (gPhoto) { pending++; compressImage(gPhoto, function(c){fd.append('girl_photo',c,gPhoto.name);checkDone();}); }
+            if (uPhoto) { pending++; compressImage(uPhoto, function(c){fd.append('user_photo',c,uPhoto.name);checkDone();}); }
+            if (pending === 0) doSubmit();
             function doSubmit() {
                 fetch('/api/supplement', { method: 'POST', body: fd })
                     .then(function(r){return r.json();})

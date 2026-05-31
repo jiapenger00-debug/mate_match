@@ -396,9 +396,10 @@ async def supplement_analysis(request: Request):
 
     form = await request.form()
     share_id = form.get("share_id", "")
-    target = form.get("target", "girl")
-    text = form.get("text", "")
-    photo = form.get("photo")
+    girl_text = form.get("girl_text", "")
+    user_text = form.get("user_text", "")
+    girl_photo = form.get("girl_photo")
+    user_photo = form.get("user_photo")
 
     # 读取原始数据
     original = get_share(share_id)
@@ -406,21 +407,29 @@ async def supplement_analysis(request: Request):
         return HTMLResponse(content='{"error":"原始报告不存在"}', status_code=404, media_type="application/json")
 
     # 处理补充照片
-    photo_desc = ""
-    if photo:
+    girl_photo_desc = ""
+    user_photo_desc = ""
+    if girl_photo:
         try:
-            img_bytes = await photo.read()
-            if img_bytes:
-                photo_desc = await analyze_supplement_photo(img_bytes)
-        except Exception as e:
-            logger.warning(f"补充照片分析失败: {e}")
+            img_bytes = await girl_photo.read()
+            if img_bytes: girl_photo_desc = await analyze_supplement_photo(img_bytes)
+        except Exception as e: logger.warning(f"女方照片分析失败: {e}")
+    if user_photo:
+        try:
+            img_bytes = await user_photo.read()
+            if img_bytes: user_photo_desc = await analyze_supplement_photo(img_bytes)
+        except Exception as e: logger.warning(f"男方照片分析失败: {e}")
 
     # 组装补充上下文
-    supplement_context = f"[补充信息 - 针对{'女方' if target == 'girl' else '男方'}]\n"
-    if text:
-        supplement_context += f"文字补充：{text}\n"
-    if photo_desc:
-        supplement_context += f"照片描述：{photo_desc}\n"
+    supplement_context = "[补充信息]\n"
+    if girl_text or girl_photo_desc:
+        supplement_context += "女方补充：\n"
+        if girl_text: supplement_context += f"{girl_text}\n"
+        if girl_photo_desc: supplement_context += f"照片描述：{girl_photo_desc}\n"
+    if user_text or user_photo_desc:
+        supplement_context += "男方补充：\n"
+        if user_text: supplement_context += f"{user_text}\n"
+        if user_photo_desc: supplement_context += f"照片描述：{user_photo_desc}\n"
     supplement_context += "\n原始分析报告：\n"
     supplement_context += f"综合匹配度：{original.get('overall_score')} 分\n"
     supplement_context += f"各维度：{_json.dumps(original.get('dimensions', []), ensure_ascii=False)}\n"
@@ -444,7 +453,7 @@ async def supplement_analysis(request: Request):
         )
         raw = resp.choices[0].message.content
         data = _json.loads(raw)
-        return HTMLResponse(content=_json.dumps({"overall_score": data.get("overall_score",0), "dimensions": data.get("dimensions",[]), "summary": data.get("summary",""), "suggestion": data.get("suggestion",""), "photo_desc": photo_desc}, ensure_ascii=False), media_type="application/json")
+        return HTMLResponse(content=_json.dumps({"overall_score": data.get("overall_score",0), "dimensions": data.get("dimensions",[]), "summary": data.get("summary",""), "suggestion": data.get("suggestion",""), "girl_photo_desc": girl_photo_desc, "user_photo_desc": user_photo_desc}, ensure_ascii=False), media_type="application/json")
     except Exception as e:
         logger.error(f"补充分析失败: {e}")
         return HTMLResponse(content='{"error":"' + str(e) + '"}', status_code=500, media_type="application/json")

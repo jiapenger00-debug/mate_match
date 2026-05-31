@@ -554,6 +554,7 @@ body::before {
 .supplement-submit { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--rose-light), var(--rose)); color: var(--bg-deep); border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
 .supplement-submit:hover { box-shadow: 0 6px 24px var(--rose-glow); }
 .supplement-file-name { color: var(--text-dim); font-size: 0.78rem; margin-top: 4px; margin-bottom: 8px; }
+@media (max-width: 500px) { .supplement-modal>div { flex-direction: column !important; } }
 
 /* ── 响应式 ────────────────────────────────── */
 @media (max-width: 600px) {
