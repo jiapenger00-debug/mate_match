@@ -46,13 +46,20 @@ python main.py --api-key sk-你的密钥
 │ 搜索女方公开   │            │ System Prompt        │
 │ 信息作为 LLM  │──Refs──▶  │ + 用户消息           │
 │ 分析的补充参考 │            │ → JSON 结构化返回    │
-└───────────────┘            └────────────────────┘
-        │                              │
-        └──────────┬───────────────────┘
+└───────────────┘            └──────┬─────────────┘
+        │                          │
+        │              ┌───────────▼──────────┐
+        │              │  vision_service.py   │
+        │              │ (Qwen API / Ollama)  │
+        │              │  颜值评分 + OCR 识别  │
+        │              └──────────────────────┘
+        │                          │
+        └──────────┬───────────────┘
                    ▼
 ┌──────────────────────────────────────────────────┐
 │              models.py  (数据层)                  │
 │  GirlInfo / UserInfo / AnalyzeResponse / ...     │
+│  BeautyScore / BeautyPairResult                  │
 │  所有请求体和响应体通过 Pydantic 严格校验          │
 └──────────────────────────────────────────────────┘
 ```
@@ -100,7 +107,8 @@ vibe_coding_tutorial/
 │   ├── __init__.py               #   公开导出 search_girl_info, analyze_matching, save_share, get_share
 │   ├── search_service.py         #   DuckDuckGo 网络搜索
 │   ├── llm_service.py            #   DeepSeek API 调用 + Prompt 构建
-│   └── share_service.py          #   分享数据持久化（SQLite）
+│   ├── share_service.py          #   分享数据持久化（SQLite）
+│   └── vision_service.py         #   双后端视觉（Qwen API / Ollama），颜值+OCR
 │
 ├── templates/                    # [视图层] Jinja2 模板
 │   ├── index.html                #   信息输入表单（女方 + 用户）
@@ -108,8 +116,10 @@ vibe_coding_tutorial/
 │   └── share.html                #   分享名片页（精简卡片 + 可展开完整报告）
 │
 ├── static/                       # [静态资源]
-│   ├── style.css                 #   全局样式（双主题 + 搜索/分享/示例选择器）
-│   └── demo-data.js              #   4 组示例情侣数据
+│   ├── style.css                 #   全局样式（双主题 + 搜索/分享/示例/学历/上传）
+│   ├── beauty.css                #   颜值 PK 页专用样式
+│   ├── demo-data.js              #   4 组示例情侣数据
+│   └── universities.js           #   145 所中国高校数据库（含 985/211/双一流标签）
 │
 ├── docs/                         # [文档]
 │   └── USAGE.md                  #   详细使用指南
@@ -206,6 +216,7 @@ vibe_coding_tutorial/
 | [Pydantic](https://docs.pydantic.dev/) | 数据校验与序列化 |
 | [OpenAI SDK](https://github.com/openai/openai-python) | 调用 DeepSeek API（OpenAI 兼容） |
 | [ddgs](https://pypi.org/project/ddgs/) | DuckDuckGo 搜索 |
+| [Qwen-VL](https://help.aliyun.com/zh/model-studio) | 多模态视觉（颜值评分/OCR识别），国内直连 |
 | [python-dotenv](https://pypi.org/project/python-dotenv/) | 环境变量管理 |
 
 ---
