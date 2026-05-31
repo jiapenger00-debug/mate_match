@@ -134,6 +134,24 @@ async def beauty_page(request: Request):
     return templates.TemplateResponse("beauty.html", {"request": request})
 
 
+@app.post("/api/beauty/single")
+async def analyze_beauty_single(request: Request):
+    """接收单张照片，返回颜值评分。"""
+    from services.vision_service import analyze_beauty
+    import json as _json
+
+    form = await request.form()
+    photo = form.get("photo")
+    if not photo:
+        return HTMLResponse(content='{"error":"请上传照片"}', status_code=400, media_type="application/json")
+    try:
+        img_bytes = await photo.read()
+        result = await analyze_beauty(img_bytes)
+        return HTMLResponse(content=_json.dumps(result, ensure_ascii=False), media_type="application/json")
+    except Exception as e:
+        return HTMLResponse(content='{"error":"' + str(e) + '"}', status_code=500, media_type="application/json")
+
+
 @app.post("/api/beauty")
 async def analyze_beauty_api(request: Request):
     """接收双方照片，返回颜值评分。"""

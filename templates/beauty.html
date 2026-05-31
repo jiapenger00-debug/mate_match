@@ -101,26 +101,42 @@
             document.getElementById('user-result').classList.add('visible');
             document.getElementById('girl-detail').textContent = '正在压缩图片…';
             document.getElementById('user-detail').textContent = '正在压缩图片…';
-            compressImage(gf, function (gc) {
-            compressImage(uf, function (uc) {
-            var fd = new FormData();
-            fd.append('girl_photo', gc, 'girl.jpg');
-            fd.append('user_photo', uc, 'user.jpg');
-            document.getElementById('girl-detail').textContent = 'AI 正在分析中…';
-            document.getElementById('user-detail').textContent = 'AI 正在分析中…';
-            fetch('/api/beauty', { method: 'POST', body: fd })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.error) { alert(data.error); submitted = false; return; }
-                    showResult('girl', data.girl);
-                    showResult('user', data.user);
-                    document.getElementById('match-score').textContent = '颜值匹配度：' + data.beauty_match + ' 分';
-                    document.getElementById('match-comment').textContent = data.beauty_comment;
-                    document.getElementById('beauty-match').classList.add('visible');
-                })
-                .catch(function () { submitted = false; });
-            });
-            });
+            var girlDone = false, userDone = false, girlData = null, userData = null;
+            function sendOne(who, file) {
+                compressImage(file, function (compressed) {
+                    var fd = new FormData();
+                    fd.append('photo', compressed, who + '.jpg');
+                    document.getElementById(who + '-detail').textContent = 'AI 正在分析中…';
+                    fetch('/api/beauty/single', { method: 'POST', body: fd })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (data.error) { document.getElementById(who + '-detail').textContent = data.error; return; }
+                            showResult(who, data);
+                            if (who === 'girl') { girlDone = true; girlData = data; }
+                            else { userDone = true; userData = data; }
+                            if (girlDone && userDone) {
+                                showMatch(girlData, userData);
+                            }
+                        })
+                        .catch(function () { submitted = false; });
+                });
+            }
+            document.getElementById('girl-detail').textContent = '正在压缩…';
+            document.getElementById('user-detail').textContent = '正在压缩…';
+            sendOne('girl', gf);
+            sendOne('user', uf);
+        }
+        function showMatch(gd, ud) {
+            var gap = Math.abs((gd.score||0) - (ud.score||0));
+            var match = Math.max(0, 100 - Math.round(gap * 15));
+            var comment;
+            if (gap <= 0.5) comment = '天作之合，颜值非常登对！';
+            else if (gap <= 1.5) comment = '颜值匹配度较高，很般配';
+            else if (gap <= 2.5) comment = '颜值有一定差距，但互补也是魅力';
+            else comment = '颜值差异较大，不过真爱不看脸';
+            document.getElementById('match-score').textContent = '颜值匹配度：' + match + ' 分';
+            document.getElementById('match-comment').textContent = comment;
+            document.getElementById('beauty-match').classList.add('visible');
         }
         function showResult(who, data) {
             document.getElementById(who + '-result').classList.add('visible');
