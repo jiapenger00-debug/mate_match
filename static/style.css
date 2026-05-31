@@ -288,6 +288,7 @@ body::before {
 }
 
 /* ── 示例选择器 ────────────────────────────── */
+.demo-label { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 6px; }
 .demo-tags {
     display: flex; gap: 6px; margin-bottom: 0.8rem; flex-wrap: wrap;
 }

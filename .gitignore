@@ -7,6 +7,7 @@ dist/
 venv/
 # 额外文件
 git代理配置排障指南.md
+windows-fix.md
 # 环境变量（含 API Key）
 .env
 
