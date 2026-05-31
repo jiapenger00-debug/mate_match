@@ -31,7 +31,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from config import HOST, PORT, DEEPSEEK_API_KEY
-from models import GirlInfo, UserInfo, AnalyzeResponse
+from models import GirlInfo, UserInfo, AnalyzeResponse, SearchResult
 from services import search_girl_info, analyze_matching, save_share, get_share
 
 # ── 日志 ──────────────────────────────────────────────
@@ -77,7 +77,6 @@ async def index(request: Request):
 
 @app.post("/api/search")
 async def search_only(
-    request: Request,
     girl_name: str = Form(""),
     girl_hometown: str = Form(""),
     girl_occupation: str = Form(""),
