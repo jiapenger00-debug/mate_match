@@ -105,15 +105,16 @@ def _parse_json(raw: str) -> dict:
 async def analyze_beauty(image_bytes: bytes) -> dict:
     """分析人像照片的颜值。"""
     backend = get_backend()
-    prompt = """分析这张人像照片的面部特征，进行客观的吸引力评估。返回 JSON（不要 markdown 包裹）：
+    prompt = """先描述这张照片中人物的外貌特征，再进行客观的吸引力评估。返回 JSON（不要 markdown 包裹）：
 {
+  "description": "照片中人物的外貌描述：性别、大致年龄、发型发色、穿着风格、气质类型，50字以内",
   "score": 1到10的颜值分数（保留一位小数，5为平均，参考亚洲审美标准），
   "skin": "肤质评价（细腻/光滑/匀称/一般/粗糙）",
   "face_shape": "脸型（鹅蛋脸/瓜子脸/圆脸/方脸/长脸/心形脸）",
   "features": "五官特点简要描述，30字以内",
   "overall": "整体印象评价，20字以内"
 }
-如果照片中没有人脸，score 返回 0，overall 返回 "未检测到人脸"。
+如果照片中没有人脸，所有字段返回空字符串，score 返回 0。
 客观评价，不要刻意夸张或贬低。"""
     try:
         return await backend.analyze(image_bytes, prompt)

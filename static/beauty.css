@@ -11,6 +11,8 @@
 .beauty-upload:hover { border-color: var(--rose); background: rgba(212,132,122,0.04); }
 .beauty-upload.has-photo { border-style: solid; border-color: var(--rose); }
 .beauty-upload img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.beauty-upload-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; z-index: 2; border-radius: 16px; }
+.beauty-upload:hover .beauty-upload-overlay { opacity: 1; }
 .beauty-upload-text { color: var(--text-dim); font-size: 0.9rem; z-index: 1; }
 .beauty-upload-plus { font-size: 2.5rem; color: var(--rose-light); margin-bottom: 0.5rem; z-index: 1; }
 

@@ -63,10 +63,15 @@
         function preview(input, who) {
             var file = input.files[0];
             if (!file) return;
+            submitted = false;
             var upload = document.getElementById(who + '-upload');
-            upload.innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt="">';
+            upload.innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt=""><div class="beauty-upload-overlay">点击更换</div>';
             upload.classList.add('has-photo');
-            checkBoth();
+            upload.onclick = function () { document.getElementById(who + '-file').click(); };
+            document.getElementById(who + '-result').classList.remove('visible');
+            document.getElementById(who + '-score').textContent = '-';
+            document.getElementById(who + '-detail').textContent = '';
+            document.getElementById('beauty-match').classList.remove('visible');
         }
         function compressImage(file, callback) {
             var reader = new FileReader();
@@ -141,10 +146,12 @@
         function showResult(who, data) {
             document.getElementById(who + '-result').classList.add('visible');
             document.getElementById(who + '-score').textContent = (data.score || 0).toFixed(1);
-            document.getElementById(who + '-detail').innerHTML =
-                '肤质：' + (data.skin || '-') + '<br>' +
-                '脸型：' + (data.face_shape || '-') + '<br>' +
-                (data.features || '') + '<br>' + (data.overall || '');
+            var detail = (data.description || '') + '<br><br>';
+            detail += '肤质：' + (data.skin || '-') + '<br>';
+            detail += '脸型：' + (data.face_shape || '-') + '<br>';
+            if (data.features) detail += data.features + '<br>';
+            if (data.overall) detail += data.overall;
+            document.getElementById(who + '-detail').innerHTML = detail;
         }
         (function () {
             var t = document.getElementById('theme-toggle');
