@@ -109,7 +109,8 @@
             document.getElementById('user-result').classList.add('visible');
             document.getElementById('girl-detail').textContent = '正在压缩…';
             document.getElementById('user-detail').textContent = '正在压缩…';
-            var girlDone = false, userDone = false, girlData = null, userData = null;
+            var done = {}, data = {};
+            function whoDone(who, d) { done[who] = true; if (d) data[who] = d; if (done.girl !== undefined && done.user !== undefined) showMatch(data.girl, data.user); }
             function sendOne(who, file) {
                 compressImage(file, function (compressed) {
                     document.getElementById(who + '-detail').textContent = 'AI 正在分析中…';
@@ -118,11 +119,12 @@
                     fetch('/api/beauty/single', { method: 'POST', body: fd })
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
-                            if (data.error) { document.getElementById(who + '-detail').textContent = data.error; return; }
+                            if (data.error) { document.getElementById(who + '-detail').textContent = '失败：' + data.error; whoDone(who, null); return; }
                             showResult(who, data);
-                            if (who === 'girl') { girlDone = true; girlData = data; }
-                            else { userDone = true; userData = data; }
-                            if (girlDone && userDone) showMatch(girlData, userData);
+                            whoDone(who, data);
+                        }).catch(function () {
+                            document.getElementById(who + '-detail').textContent = '超时，请重试';
+                            whoDone(who, null);
                         });
                 });
             }
@@ -130,6 +132,11 @@
             sendOne('user', uf);
         }
         function showMatch(gd, ud) {
+            if (!gd || !ud) {
+                document.getElementById('match-comment').textContent = '一方分析失败，无法计算匹配度';
+                document.getElementById('beauty-match').classList.add('visible');
+                return;
+            }
             var gap = Math.abs((gd.score||0) - (ud.score||0));
             var match = Math.max(0, 100 - Math.round(gap * 15));
             var comment;
