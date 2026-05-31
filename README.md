@@ -115,6 +115,7 @@ vibe_coding_tutorial/
 ├── requirements.txt              # [依赖] Python 包列表
 ├── .env.example                  # [模板] 环境变量示例
 ├── .gitignore
+├── tunnel.sh                    #   公网隧道启动脚本（Cloudflare/Localtunnel）
 │
 ├── services/                     # [服务层] 核心业务逻辑
 │   ├── __init__.py               #   公开导出 search_girl_info, analyze_matching, save_share, get_share
@@ -269,15 +270,8 @@ DEEPSEEK_API_KEY=sk-xxx
 
 ```bash
 pip install -r requirements.txt
-
-# 启动（两个 Key 都不落盘）
 python main.py --api-key sk-DS密钥 --qwen-api-key sk-QW密钥
 
-# 本地访问
-http://localhost:8000          # 匹配分析
-http://localhost:8000/beauty   # 颜值 PK
-
-# 公网固定域名（需 Cloudflare 账号 + 域名）
-# 详见 docs/PORT-FORWARDING.md
-bash tunnel.sh
+# 本地: http://localhost:8000     颜值: http://localhost:8000/beauty
+# 公网: bash tunnel.sh           或: npx localtunnel --port 8000
 ```
