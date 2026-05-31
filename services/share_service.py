@@ -38,6 +38,25 @@ def _generate_id() -> str:
             return short
 
 
+def update(share_id: str, data: dict):
+    """更新已有分享数据。"""
+    conn = _ensure_db()
+    conn.execute(
+        """UPDATE shares SET
+           overall_score = ?, dimensions = ?, summary = ?, suggestion = ?
+           WHERE id = ?""",
+        (
+            data.get("overall_score", 0),
+            json.dumps(data.get("dimensions", []), ensure_ascii=False),
+            data.get("summary", ""),
+            data.get("suggestion", ""),
+            share_id,
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+
 def save(data: dict) -> str:
     """保存分享数据，返回短 ID。"""
     conn = _ensure_db()

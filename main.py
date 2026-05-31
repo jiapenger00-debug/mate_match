@@ -38,7 +38,7 @@ from fastapi.templating import Jinja2Templates
 
 from config import HOST, PORT, DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
 from models import GirlInfo, UserInfo, AnalyzeResponse, SearchResult
-from services import search_girl_info, analyze_matching, save_share, get_share
+from services import search_girl_info, analyze_matching, save_share, get_share, update_share
 
 # 颜值分析结果暂存（后台线程写入，轮询端点读取）
 _beauty_cache: dict[str, dict | None] = {}
@@ -453,6 +453,11 @@ async def supplement_analysis(request: Request):
         )
         raw = resp.choices[0].message.content
         data = _json.loads(raw)
+        # 更新分享记录，让分享链接展示最新报告
+        try:
+            update_share(share_id, data)
+        except Exception as e:
+            logger.warning(f"更新分享记录失败: {e}")
         return HTMLResponse(content=_json.dumps({"overall_score": data.get("overall_score",0), "dimensions": data.get("dimensions",[]), "summary": data.get("summary",""), "suggestion": data.get("suggestion",""), "girl_photo_desc": girl_photo_desc, "user_photo_desc": user_photo_desc}, ensure_ascii=False), media_type="application/json")
     except Exception as e:
         logger.error(f"补充分析失败: {e}")
