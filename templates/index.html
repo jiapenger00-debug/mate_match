@@ -583,11 +583,24 @@
                 var canvas = document.createElement('canvas');
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                canvas.toBlob(function (blob) {
-                    URL.revokeObjectURL(img.src);
-                    callback(blob);
-                }, 'image/jpeg', 0.5);
+                if (canvas.toBlob) {
+                    canvas.toBlob(function (blob) {
+                        URL.revokeObjectURL(img.src);
+                        if (blob) callback(blob); else callback(file);
+                    }, 'image/jpeg', 0.5);
+                } else {
+                    try {
+                        var dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                        var bs = atob(dataUrl.split(',')[1]);
+                        var ab = new ArrayBuffer(bs.length);
+                        var ia = new Uint8Array(ab);
+                        for (var i = 0; i < bs.length; i++) ia[i] = bs.charCodeAt(i);
+                        URL.revokeObjectURL(img.src);
+                        callback(new Blob([ab], { type: 'image/jpeg' }));
+                    } catch (e) { callback(file); }
+                }
             };
+            img.onerror = function () { callback(file); };
             img.src = URL.createObjectURL(file);
         }
 
