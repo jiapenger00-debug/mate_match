@@ -1,32 +1,24 @@
 """
-网络搜索服务 —— 使用 Brave Search API 搜索公开信息以辅助分析。
-免费额度 2000 次/月，国内直连，无需代理。
+网络搜索服务 —— 使用 DuckDuckGo 搜索公开信息以辅助分析。
 """
 
 import asyncio
 import logging
-import os
-import ssl
-
-import certifi
-import httpx
+from ddgs import DDGS
 
 from config import SEARCH_MAX_RESULTS
 from models import SearchResult
 
 logger = logging.getLogger(__name__)
 
-BRAVE_API_KEY = os.getenv("BRAVE_API_KEY", "")
-BRAVE_API_URL = "https://api.search.brave.com/res/v1/web/search"
-
 
 async def search_girl_info(name: str, extra_keywords: str = "") -> list[SearchResult]:
     """
-    搜索相关公开信息。
+    搜索女方的相关公开信息。
 
     Args:
-        name: 姓名/昵称
-        extra_keywords: 额外搜索关键词
+        name: 女方姓名/昵称
+        extra_keywords: 额外搜索关键词（如职业、学校等）
 
     Returns:
         搜索结果列表（最多 SEARCH_MAX_RESULTS 条）
@@ -35,42 +27,33 @@ async def search_girl_info(name: str, extra_keywords: str = "") -> list[SearchRe
     if not query:
         return []
 
-    if not BRAVE_API_KEY:
-        logger.warning("未配置 BRAVE_API_KEY，跳过搜索")
-        return []
-
-    logger.info(f"Brave 搜索: {query}")
+    logger.info(f"执行网络搜索: {query}")
 
     try:
-        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
-        async with httpx.AsyncClient(timeout=5.0, verify=ssl_ctx) as client:
-            resp = await client.get(
-                BRAVE_API_URL,
-                params={"q": query, "count": min(SEARCH_MAX_RESULTS, 20)},
-                headers={
-                    "Accept": "application/json",
-                    "Accept-Encoding": "gzip",
-                    "X-Subscription-Token": BRAVE_API_KEY,
-                },
-            )
-            if resp.status_code != 200:
-                logger.warning(f"Brave 搜索失败: HTTP {resp.status_code}")
-                return []
-            data = resp.json()
-            web = data.get("web", {}).get("results", [])
-            results = [
-                SearchResult(
-                    title=r.get("title", ""),
-                    url=r.get("url", ""),
-                    snippet=r.get("description", ""),
-                )
-                for r in web
-            ]
-            logger.info(f"搜索完成，获取到 {len(results)} 条结果")
-            return results
-    except httpx.TimeoutException:
-        logger.warning(f"Brave 搜索超时: {query}")
+        # ddgs 是同步库，在线程池中运行避免阻塞事件循环
+        # 添加超时限制，手机端走隧道太慢时自动跳过
+        raw_results = await asyncio.wait_for(
+            asyncio.to_thread(_ddgs_search, query, max_results=SEARCH_MAX_RESULTS),
+            timeout=4.0
+        )
+        logger.info(f"搜索完成，获取到 {len(raw_results)} 条结果")
+        return raw_results
+    except asyncio.TimeoutError:
+        logger.warning(f"搜索超时（4秒），跳过: {query}")
         return []
     except Exception as e:
-        logger.warning(f"Brave 搜索失败: {e}")
+        logger.warning(f"搜索失败: {e}")
         return []
+
+
+def _ddgs_search(query: str, max_results: int) -> list[SearchResult]:
+    """同步的 DDGS 搜索（在 asyncio.to_thread 中执行）"""
+    results: list[SearchResult] = []
+    with DDGS() as ddgs:
+        for item in ddgs.text(query, max_results=max_results):
+            results.append(SearchResult(
+                title=item.get("title", ""),
+                url=item.get("href", ""),
+                snippet=item.get("body", ""),
+            ))
+    return results
