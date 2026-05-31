@@ -2,21 +2,23 @@
 FastAPI 主入口 —— 灵魂契合度分析 Web 应用。
 
 启动方式:
-    python main.py --api-key sk-xxx                   # 命令行传入密钥
-    python main.py --api-key sk-xxx --port 3000       # 指定端口
-    uvicorn main:app --reload --host 0.0.0.0 --port 8000  # 需先配 .env
+    python main.py --api-key sk-xxx --qwen-api-key sk-xxx     # 两个 Key 都通过命令行传入
+    python main.py --api-key sk-xxx --port 3000               # 只用 DeepSeek
+    uvicorn main:app --reload --host 0.0.0.0 --port 8000     # 需先配 .env
 """
 
 import os
 import sys
 
 # ── 命令行参数解析（必须在导入项目模块之前）───────────
-# 支持: python main.py --api-key sk-xxx [--host 0.0.0.0] [--port 8000]
-_cli_keys = {"--api-key", "--host", "--port"}
+# 支持: python main.py --api-key sk-xxx --qwen-api-key sk-xxx [--host 0.0.0.0] [--port 8000]
+_cli_keys = {"--api-key", "--qwen-api-key", "--host", "--port"}
 _args = sys.argv[1:]
 for i, arg in enumerate(_args):
     if arg == "--api-key" and i + 1 < len(_args):
         os.environ["DEEPSEEK_API_KEY"] = _args[i + 1]
+    elif arg == "--qwen-api-key" and i + 1 < len(_args):
+        os.environ["QWEN_API_KEY"] = _args[i + 1]
     elif arg == "--host" and i + 1 < len(_args):
         os.environ["HOST"] = _args[i + 1]
     elif arg == "--port" and i + 1 < len(_args):
@@ -367,7 +369,12 @@ if __name__ == "__main__":
         print("获取免费 API Key: https://platform.deepseek.com")
         print("=" * 55)
         print("")
-        print("将以无 API Key 模式启动，分析功能将不可用。")
+
+    from config import QWEN_API_KEY
+    if not QWEN_API_KEY:
+        print("[INFO] 未设置 Qwen API Key（截图OCR/颜值评分不可用）")
+        print("      命令行: python main.py --qwen-api-key sk-xxx")
+        print("      获取免费 Key: https://dashscope.aliyun.com/")
         print("")
 
     print(f"Server starting at http://{HOST}:{PORT}")
