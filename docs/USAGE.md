@@ -256,27 +256,33 @@ uvicorn main:app --host 0.0.0.0 --port 8000  # 不加 --reload
 
 ## 发布到互联网
 
-### 方案一：Ngrok（最简单，推荐测试）
+详细指南见 **[docs/PORT-FORWARDING.md](PORT-FORWARDING.md)**，包含 4 种方案对比：
+
+| 方案 | 费用 | 推荐场景 |
+|------|------|----------|
+| Cloudflare Tunnel | 免费 | 日常使用，推荐 |
+| Localtunnel | 免费 | 临时快速分享 |
+| ngrok | 免费有限制 | 需要 Web 调试界面 |
+| frp 自建 | 需云服务器 | 生产环境长期部署 |
+
+### 快速开始（Cloudflare Tunnel）
 
 ```bash
-# 安装 ngrok（https://ngrok.com/download）
-# 启动内网穿透
-ngrok http 8000
+# 安装
+winget install cloudflare.cloudflared
+
+# 启动服务（终端 1）
+python main.py --api-key sk-xxx
+
+# 启动隧道（终端 2）
+cloudflared tunnel --url localhost:8000
 ```
 
-Ngrok 会生成一个公网 URL（如 `https://abc123.ngrok.io`），直接分享给他人即可访问。
+运行后把生成的 `https://xxx.trycloudflare.com` 链接发给任何人即可访问。
 
-### 方案二：Cloudflare Tunnel（免费）
-
-```bash
-# 安装 cloudflared（https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/）
-cloudflared tunnel --url http://localhost:8000
-```
-
-### 方案三：部署到云服务器
+### 部署到云服务器
 
 ```bash
-# 在服务器上克隆项目
 git clone <your-repo-url>
 cd soul_match
 pip install -r requirements.txt
@@ -300,8 +306,7 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-sudo systemctl enable soulmatch
-sudo systemctl start soulmatch
+sudo systemctl enable soulmatch && sudo systemctl start soulmatch
 ```
 
 然后配置 Nginx 反向代理 + Let's Encrypt HTTPS 证书。
