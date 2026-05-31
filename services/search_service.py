@@ -31,11 +31,16 @@ async def search_girl_info(name: str, extra_keywords: str = "") -> list[SearchRe
 
     try:
         # ddgs 是同步库，在线程池中运行避免阻塞事件循环
-        raw_results = await asyncio.to_thread(
-            _ddgs_search, query, max_results=SEARCH_MAX_RESULTS
+        # 添加超时限制，手机端走隧道太慢时自动跳过
+        raw_results = await asyncio.wait_for(
+            asyncio.to_thread(_ddgs_search, query, max_results=SEARCH_MAX_RESULTS),
+            timeout=4.0
         )
         logger.info(f"搜索完成，获取到 {len(raw_results)} 条结果")
         return raw_results
+    except asyncio.TimeoutError:
+        logger.warning(f"搜索超时（4秒），跳过: {query}")
+        return []
     except Exception as e:
         logger.warning(f"搜索失败: {e}")
         return []

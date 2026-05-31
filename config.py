@@ -12,7 +12,7 @@ DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash")
 
 # 搜索相关
-SEARCH_MAX_RESULTS = 5          # 每次搜索返回的最大条数
+SEARCH_MAX_RESULTS = 3          # 每次搜索返回的最大条数
 SEARCH_REQUEST_DELAY = 1.0      # 搜索请求间隔（秒），避免触发频率限制
 
 # 视觉服务

@@ -500,7 +500,7 @@ body::before {
 .search-overlay-text { color: var(--rose-light); font-size: 1.1rem; margin-bottom: 1.5rem; letter-spacing: 0.04em; }
 .search-progress { width: 200px; height: 4px; background: rgba(212,132,122,0.15); border-radius: 2px; overflow: hidden; }
 .search-progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--rose), var(--rose-light)); border-radius: 2px; }
-.search-overlay.visible .search-progress-bar { animation: search-progress-anim 1.8s ease-out forwards; }
+.search-overlay.visible .search-progress-bar { animation: search-progress-anim 4s ease-out forwards; }
 @keyframes search-progress-anim { 0% { width: 0%; } 30% { width: 40%; } 70% { width: 75%; } 100% { width: 95%; } }
 .search-results-wrap { display: none; padding: 1rem 0; }
 .search-results-wrap.visible { display: block; }
