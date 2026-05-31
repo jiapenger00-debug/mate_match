@@ -19,8 +19,6 @@ for i, arg in enumerate(_args):
         os.environ["DEEPSEEK_API_KEY"] = _args[i + 1]
     elif arg == "--qwen-api-key" and i + 1 < len(_args):
         os.environ["QWEN_API_KEY"] = _args[i + 1]
-    elif arg == "--brave-api-key" and i + 1 < len(_args):
-        os.environ["BRAVE_API_KEY"] = _args[i + 1]
     elif arg == "--host" and i + 1 < len(_args):
         os.environ["HOST"] = _args[i + 1]
     elif arg == "--port" and i + 1 < len(_args):

@@ -22,8 +22,6 @@ QWEN_MODEL = os.getenv("QWEN_MODEL", "qwen3-vl-flash")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2-vl:7b")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
-# 搜索服务
-BRAVE_API_KEY = os.getenv("BRAVE_API_KEY", "")
 
 # 服务
 HOST = os.getenv("HOST", "0.0.0.0")
