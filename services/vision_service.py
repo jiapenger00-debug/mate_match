@@ -114,7 +114,7 @@ async def analyze_beauty(image_bytes: bytes) -> dict:
   "features": "五官特点简要描述，30字以内",
   "overall": "整体印象评价，20字以内"
 }
-如果照片中没有人脸，所有字段返回空字符串，score 返回 0。
+如果照片中没有人脸，score 返回 0，overall 返回"未检测到人脸"，其余字段返回空字符串。
 客观评价，不要刻意夸张或贬低。"""
     try:
         return await backend.analyze(image_bytes, prompt)
