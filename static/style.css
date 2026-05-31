@@ -198,6 +198,14 @@ body::before {
     color: var(--text-dim);
     font-size: 1.05rem; letter-spacing: 0.04em;
 }
+.header-nav-link {
+    display: inline-block; margin-top: 0.6rem;
+    padding: 4px 16px; border: 1px solid var(--rose);
+    color: var(--rose-light); border-radius: 20px;
+    font-size: 0.85rem; text-decoration: none;
+    transition: all 0.25s ease;
+}
+.header-nav-link:hover { background: rgba(212,132,122,0.15); color: var(--cream); }
 .header::after {
     content: ""; display: block;
     width: 60px; height: 2px;
