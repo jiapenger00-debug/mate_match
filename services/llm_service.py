@@ -46,6 +46,7 @@ def build_user_message(
     girl: GirlInfo,
     user: UserInfo,
     search_results: list[SearchResult] | None = None,
+    user_search_results: list[SearchResult] | None = None,
 ) -> str:
     """构建发送给 LLM 的用户消息"""
 
@@ -84,8 +85,12 @@ def build_user_message(
 
     # 搜索结果补充
     if search_results:
-        parts.append("\n### 网络公开信息参考")
+        parts.append("\n### 女方公开信息参考")
         for i, sr in enumerate(search_results, 1):
+            parts.append(f"{i}. {sr.title}\n   {sr.snippet}")
+    if user_search_results:
+        parts.append("\n### 男方公开信息参考")
+        for i, sr in enumerate(user_search_results, 1):
             parts.append(f"{i}. {sr.title}\n   {sr.snippet}")
 
     # 用户信息
@@ -128,6 +133,7 @@ async def analyze_matching(
     girl: GirlInfo,
     user: UserInfo,
     search_results: list[SearchResult] | None = None,
+    user_search_results: list[SearchResult] | None = None,
 ) -> AnalyzeResponse:
     """
     调用 DeepSeek API 进行匹配度分析。
@@ -149,7 +155,7 @@ async def analyze_matching(
         http_client=http_client,
     )
 
-    user_message = build_user_message(girl, user, search_results)
+    user_message = build_user_message(girl, user, search_results, user_search_results)
 
     logger.info(f"调用 {DEEPSEEK_MODEL} 进行匹配分析...")
     logger.debug(f"Prompt 长度: {len(user_message)} 字符")

@@ -199,8 +199,10 @@ async def analyze(
     user_extra: str = Form(""),
     user_requirements: str = Form(""),
     # ── 选项 ──
-    enable_search: bool = Form(True),
+    enable_search_girl: bool = Form(True),
+    enable_search_user: bool = Form(True),
     selected_results: str = Form(""),
+    selected_results_user: str = Form(""),
     girl_photo: UploadFile | None = File(None),
     user_photo: UploadFile | None = File(None),
 ):
@@ -239,7 +241,7 @@ async def analyze(
         requirements=user_requirements.strip() or None,
     )
 
-    logger.info(f"收到分析请求: {girl.name} × {user.name}, 搜索={enable_search}")
+    logger.info(f"收到分析请求: {girl.name} × {user.name}, 搜索女方={enable_search_girl} 男方={enable_search_user}")
 
     # 检查 API Key
     if not DEEPSEEK_API_KEY:
@@ -255,9 +257,10 @@ async def analyze(
         })
 
     # 步骤1：网络搜索（可选）
+    import json as _json
     search_results = None
-    if enable_search:
-        import json as _json
+    # 女方搜索
+    if enable_search_girl:
         if selected_results:
             try:
                 raw = _json.loads(selected_results)
@@ -265,12 +268,23 @@ async def analyze(
             except Exception:
                 pass
         else:
-            extra_kw = " ".join(
-                filter(None, [girl.occupation, girl.edu_level, girl.edu_school, girl.hometown])
-            )
+            extra_kw = " ".join(filter(None, [girl.occupation, girl.edu_level, girl.edu_school, girl.hometown]))
             raw_results = await search_girl_info(girl.name, extra_kw)
             search_results = raw_results if raw_results else None
-        logger.info(f"搜索到 {len(search_results or [])} 条结果")
+    # 男方搜索（与女方搜索同理，搜男方姓名+信息）
+    user_search_results = None
+    if enable_search_user:
+        if selected_results_user:
+            try:
+                raw = _json.loads(selected_results_user)
+                user_search_results = [SearchResult(title=r["title"], url=r.get("url",""), snippet=r["snippet"]) for r in raw]
+            except Exception:
+                pass
+        else:
+            extra_kw = " ".join(filter(None, [user.occupation, user.edu_level, user.edu_school, user.hometown]))
+            raw_results = await search_girl_info(user.name, extra_kw)
+            user_search_results = raw_results if raw_results else None
+    logger.info(f"搜索到 女方{len(search_results or [])} + 男方{len(user_search_results or [])} 条结果")
 
     # 步骤1.5：颜值分析（如有照片）
     beauty_result = None
@@ -287,7 +301,7 @@ async def analyze(
 
     # 步骤2：调用 LLM 进行匹配分析
     try:
-        result: AnalyzeResponse = await analyze_matching(girl, user, search_results)
+        result: AnalyzeResponse = await analyze_matching(girl, user, search_results, user_search_results)
     except Exception as e:
         logger.error(f"LLM 分析失败: {e}", exc_info=True)
         result = AnalyzeResponse(

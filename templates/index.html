@@ -212,8 +212,12 @@
             <!-- ── 操作区 ── -->
             <section class="card">
                 <div class="search-toggle">
-                    <input type="checkbox" id="enable_search" name="enable_search" checked>
-                    <label for="enable_search">搜索她的公开信息作为参考</label>
+                    <input type="checkbox" id="enable_search_girl" name="enable_search_girl" checked>
+                    <label for="enable_search_girl">搜索女方的公开信息</label>
+                </div>
+                <div class="search-toggle">
+                    <input type="checkbox" id="enable_search_user" name="enable_search_user" checked>
+                    <label for="enable_search_user">搜索男方的公开信息</label>
                 </div>
 
                 <p class="demo-label">一键填充示例：</p>
@@ -280,18 +284,21 @@
         var searchSkipNow = document.getElementById('search-skip-now');
         var submitBtn = document.getElementById('submit-btn');
         var searchAbort = null;
+        var girlResults = [];
+        var userResults = [];
         var selectedResultsJson = '[]';
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
-            var enableSearch = document.getElementById('enable_search').checked;
-            if (!enableSearch) {
-                submitAnalysis('');
+            var searchGirl = document.getElementById('enable_search_girl').checked;
+            var searchUser = document.getElementById('enable_search_user').checked;
+            if (!searchGirl && !searchUser) {
+                submitAnalysis('', '');
                 return;
             }
             // 显示搜索动画
             searchOverlay.classList.add('visible');
-            searchOverlayText.textContent = '正在搜索她的公开信息…';
+            searchOverlayText.textContent = '正在搜索公开信息…';
             searchCount.textContent = '';
             submitBtn.disabled = true;
             submitBtn.textContent = '搜索中…';
@@ -299,17 +306,30 @@
 
             var fd = new FormData(form);
             searchAbort = new AbortController();
-            fetch('/api/search', { method: 'POST', body: fd, signal: searchAbort.signal })
-                .then(function (r) { return r.json(); })
+            var promises = [];
+            if (searchGirl) promises.push(fetch('/api/search', { method: 'POST', body: fd, signal: searchAbort.signal }).then(function(r){return r.json();}));
+            else promises.push(Promise.resolve([]));
+            if (searchUser) {
+                var fdU = new FormData();
+                fdU.append('girl_name', document.getElementById('user_name').value || '');
+                fdU.append('girl_hometown', document.getElementById('user_hometown').value || '');
+                fdU.append('girl_occupation', document.getElementById('user_occupation').value || '');
+                fdU.append('girl_education', document.getElementById('user_edu_level').value || '');
+                promises.push(fetch('/api/search', { method: 'POST', body: fdU, signal: searchAbort.signal }).then(function(r){return r.json();}));
+            } else promises.push(Promise.resolve([]));
+            Promise.all(promises)
                 .then(function (results) {
                     searchSkipNow.style.display = 'none';
                     searchOverlay.classList.remove('visible');
-                    if (!results || !results.length) {
-                        submitAnalysis(''); return;
+                    girlResults = results[0] || [];
+                    userResults = results[1] || [];
+                    var allResults = girlResults.concat(userResults);
+                    if (!allResults.length) {
+                        submitAnalysis('', ''); return;
                     }
-                    searchResultCount.textContent = '找到 ' + results.length + ' 条结果，勾选要参考的内容：';
+                    searchResultCount.textContent = '找到 ' + allResults.length + ' 条结果（女方' + girlResults.length + ' + 男方' + userResults.length + '），勾选要参考的内容：';
                     searchResultsList.innerHTML = '';
-                    results.forEach(function (r, i) {
+                    allResults.forEach(function (r, i) {
                         var card = document.createElement('div');
                         card.className = 'search-result-card checked';
                         card.innerHTML =
@@ -329,11 +349,11 @@
                 .catch(function () {
                     searchSkipNow.style.display = 'none';
                     searchOverlay.classList.remove('visible');
-                    submitAnalysis('');
+                    submitAnalysis('', '');
                 });
         });
 
-        function submitAnalysis(selectedJson) {
+        function submitAnalysis(girlResultsJson, userResultsJson) {
             searchResultsWrap.classList.remove('visible');
             submitBtn.style.display = 'block';
             submitBtn.disabled = true;
@@ -342,7 +362,8 @@
             searchOverlayText.textContent = '正在解读两颗心的距离…';
             searchCount.textContent = '';
             var fd = new FormData(form);
-            fd.append('selected_results', selectedJson);
+            fd.append('selected_results', girlResultsJson || '');
+            fd.append('selected_results_user', userResultsJson || '');
             fetch('/api/analyze', { method: 'POST', body: fd })
                 .then(function (r) { return r.text(); })
                 .then(function (html) {
@@ -350,23 +371,26 @@
                 });
         }
 
-        searchSkip.addEventListener('click', function () { submitAnalysis(''); });
+        searchSkip.addEventListener('click', function () { submitAnalysis('', ''); });
         searchSkipNow.addEventListener('click', function () {
             if (searchAbort) searchAbort.abort();
             searchSkipNow.style.display = 'none';
             searchOverlay.classList.remove('visible');
-            submitAnalysis('');
+            submitAnalysis('', '');
         });
         searchConfirm.addEventListener('click', function () {
-            var checked = [];
+            var girlChecked = [], userChecked = [];
+            var girlLen = (typeof girlResults !== 'undefined' ? girlResults.length : 0) || 0;
             document.querySelectorAll('.search-result-card input:checked').forEach(function (cb) {
                 var idx = parseInt(cb.getAttribute('data-idx'));
                 var card = cb.closest('.search-result-card');
                 var titleEl = card.querySelector('strong');
                 var snippetEl = card.querySelector('p');
-                checked.push({ title: titleEl.textContent, url: '', snippet: snippetEl ? snippetEl.textContent : '' });
+                var item = { title: titleEl.textContent, url: '', snippet: snippetEl ? snippetEl.textContent : '' };
+                if (idx < girlLen) girlChecked.push(item);
+                else userChecked.push(item);
             });
-            submitAnalysis(JSON.stringify(checked));
+            submitAnalysis(JSON.stringify(girlChecked), JSON.stringify(userChecked));
         });
 
         // 示例选择器
