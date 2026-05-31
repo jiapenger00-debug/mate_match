@@ -4,19 +4,19 @@
 
 ---
 
-## 方式一：Serveo（推荐，可固定域名）
+## 方式一：Localtunnel（推荐，稳定免费）
 
-使用 SSH 隧道，零安装，免费，注册后可固定子域名。
+零安装，一条命令，支持大文件上传（截图 OCR、颜值分析）。
 
 ```bash
-ssh -R soulmatch:80:localhost:8000 serveo.net
+npx localtunnel --port 8000
 ```
 
-首次使用去 https://console.serveo.net 用 Google/GitHub 登录注册 SSH 公钥，之后 URL 固定为 `https://soulmatch.serveo.net`。
+首次访问会有一个提示页，点击「Click to Continue」即可。实测最稳定。
 
 ---
 
-## 方式二：Cloudflare Tunnel（免费，URL 随机）
+## 方式二：Cloudflare Tunnel（免费，偶尔不稳）
 
 ### 安装
 
