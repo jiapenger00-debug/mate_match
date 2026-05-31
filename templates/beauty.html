@@ -55,6 +55,7 @@
     <div class="beauty-match" id="beauty-match">
         <div class="beauty-match-score" id="match-score"></div>
         <div class="beauty-match-comment" id="match-comment"></div>
+        <button class="share-expand-btn" style="display:block;margin:1rem auto 0;" onclick="resetAll()">再来一次</button>
     </div>
 
     <div style="text-align:center;padding:2rem;">
@@ -109,7 +110,7 @@
             document.getElementById('user-result').classList.add('visible');
             document.getElementById('girl-detail').textContent = '正在压缩…';
             document.getElementById('user-detail').textContent = '正在压缩…';
-            var done = {}, data = {};
+            done = {}; data = {};
             function whoDone(who, d) { done[who] = true; if (d) data[who] = d; if (done.girl !== undefined && done.user !== undefined) showMatch(data.girl, data.user); }
             function sendOne(who, file) {
                 compressImage(file, function (compressed) {
@@ -157,6 +158,21 @@
             if (data.features) detail += data.features + '<br>';
             if (data.overall) detail += data.overall;
             document.getElementById(who + '-detail').innerHTML = detail;
+        }
+        function resetAll() {
+            ['girl','user'].forEach(function (who) {
+                var upload = document.getElementById(who + '-upload');
+                upload.innerHTML = '<div class="beauty-upload-plus">+</div><div class="beauty-upload-text">上传' + (who==='girl'?'女方':'男方') + '照片</div>';
+                upload.classList.remove('has-photo');
+                upload.onclick = function () { document.getElementById(who + '-file').click(); };
+                document.getElementById(who + '-file').value = '';
+                document.getElementById(who + '-result').classList.remove('visible');
+                document.getElementById(who + '-score').textContent = '-';
+                document.getElementById(who + '-detail').textContent = '';
+            });
+            document.getElementById('beauty-match').classList.remove('visible');
+            document.getElementById('analyze-btn').style.display = 'none';
+            done = {}; data = {};
         }
         (function () {
             var t = document.getElementById('theme-toggle');
