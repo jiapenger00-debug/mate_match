@@ -81,7 +81,7 @@
         </section>
         <script>
             (function () {
-                var sid = '{{ share_id }}';
+                var sid = '{{ beauty_sid }}';
                 if (!sid) return;
                 var poll = setInterval(function () {
                     fetch('/api/beauty-status/' + sid)

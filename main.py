@@ -308,11 +308,11 @@ async def analyze(
     search_results, user_search_results = await _asyncio.gather(_search_girl(), _search_user())
     logger.info(f"搜索到 女方{len(search_results or [])} + 男方{len(user_search_results or [])} 条结果")
 
-    # 提前生成 share_id（用于后续异步更新颜值结果）
+    # 提前生成 beauty_id（用于后续异步更新颜值结果）
     import secrets as _secrets
     import threading as _threading
-    share_id = _secrets.token_urlsafe(4).replace("-","").replace("_","")[:6]
-    _beauty_cache[share_id] = None  # None = 还在分析中
+    beauty_sid = _secrets.token_urlsafe(4).replace("-","").replace("_","")[:6]
+    _beauty_cache[beauty_sid] = None  # None = 还在分析中
 
     # 颜值分析后台线程运行
     if girl_photo or user_photo:
@@ -329,7 +329,7 @@ async def analyze(
                     _beauty_cache[sid] = result
             except Exception:
                 _beauty_cache[sid] = {"error": True}
-        _threading.Thread(target=_do_beauty_sync, args=(share_id,), daemon=True).start()
+        _threading.Thread(target=_do_beauty_sync, args=(beauty_sid,), daemon=True).start()
 
     async def _do_llm():
         try:
@@ -367,6 +367,7 @@ async def analyze(
         "suggestion": result.suggestion,
         "search_results": result.search_results or [],
         "share_id": share_id or "",
+        "beauty_sid": beauty_sid if (girl_photo or user_photo) else "",
         "beauty_pending": bool(girl_photo or user_photo),
     })
 
