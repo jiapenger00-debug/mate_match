@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a0a14">
+    <title>颜值 PK · 灵魂契合度</title>
+    <link rel="stylesheet" href="/static/beauty.css">
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" aria-label="切换明暗主题"></button>
+    <div class="hearts-container" aria-hidden="true">
+        <span class="heart-particle">🌸</span><span class="heart-particle">💕</span><span class="heart-particle">✨</span><span class="heart-particle">💖</span><span class="heart-particle">🌹</span><span class="heart-particle">💗</span><span class="heart-particle">🫧</span><span class="heart-particle">💝</span><span class="heart-particle">💫</span><span class="heart-particle">🌸</span>
+    </div>
+
+    <div class="beauty-hero">
+        <h1>颜值 PK</h1>
+        <p>上传双方照片，AI 为你解析颜值匹配度</p>
+    </div>
+
+    <div class="beauty-pk">
+        <div class="beauty-side" id="girl-side">
+            <div class="beauty-upload" id="girl-upload" onclick="document.getElementById('girl-file').click()">
+                <div class="beauty-upload-plus">+</div>
+                <div class="beauty-upload-text">上传女方照片</div>
+            </div>
+            <input type="file" id="girl-file" accept="image/*" style="display:none" onchange="preview(this, 'girl')">
+            <div class="beauty-result" id="girl-result">
+                <div class="beauty-score-big" id="girl-score">-</div>
+                <div class="beauty-score-label">颜值评分</div>
+                <div class="beauty-detail" id="girl-detail"></div>
+            </div>
+        </div>
+
+        <div class="beauty-vs">VS</div>
+
+        <div class="beauty-side" id="user-side">
+            <div class="beauty-upload" id="user-upload" onclick="document.getElementById('user-file').click()">
+                <div class="beauty-upload-plus">+</div>
+                <div class="beauty-upload-text">上传男方照片</div>
+            </div>
+            <input type="file" id="user-file" accept="image/*" style="display:none" onchange="preview(this, 'user')">
+            <div class="beauty-result" id="user-result">
+                <div class="beauty-score-big" id="user-score">-</div>
+                <div class="beauty-score-label">颜值评分</div>
+                <div class="beauty-detail" id="user-detail"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="beauty-match" id="beauty-match">
+        <div class="beauty-match-score" id="match-score"></div>
+        <div class="beauty-match-comment" id="match-comment"></div>
+    </div>
+
+    <div style="text-align:center;padding:2rem;">
+        <a href="/" class="btn" style="display:inline-block;width:auto;padding:0.8rem 2rem;text-decoration:none;">返回首页</a>
+    </div>
+
+    <footer class="footer"><p>颜值分析由 AI 生成，仅供参考</p></footer>
+
+    <script>
+        function preview(input, who) {
+            var file = input.files[0];
+            if (!file) return;
+            var upload = document.getElementById(who + '-upload');
+            upload.innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt="">';
+            upload.classList.add('has-photo');
+            checkBoth();
+        }
+        var submitted = false;
+        function checkBoth() {
+            if (submitted) return;
+            var gf = document.getElementById('girl-file').files[0];
+            var uf = document.getElementById('user-file').files[0];
+            if (!gf || !uf) return;
+            submitted = true;
+            var fd = new FormData();
+            fd.append('girl_photo', gf);
+            fd.append('user_photo', uf);
+            document.getElementById('girl-score').textContent = '...';
+            document.getElementById('user-score').textContent = '...';
+            fetch('/api/beauty', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.error) { alert(data.error); submitted = false; return; }
+                    showResult('girl', data.girl);
+                    showResult('user', data.user);
+                    document.getElementById('match-score').textContent = '颜值匹配度：' + data.beauty_match + ' 分';
+                    document.getElementById('match-comment').textContent = data.beauty_comment;
+                    document.getElementById('beauty-match').classList.add('visible');
+                })
+                .catch(function () { submitted = false; });
+        }
+        function showResult(who, data) {
+            document.getElementById(who + '-result').classList.add('visible');
+            document.getElementById(who + '-score').textContent = (data.score || 0).toFixed(1);
+            document.getElementById(who + '-detail').innerHTML =
+                '肤质：' + (data.skin || '-') + '<br>' +
+                '脸型：' + (data.face_shape || '-') + '<br>' +
+                (data.features || '') + '<br>' + (data.overall || '');
+        }
+        (function () {
+            var t = document.getElementById('theme-toggle');
+            var h = document.documentElement;
+            var s = localStorage.getItem('theme');
+            if (s) h.setAttribute('data-theme', s);
+            t.addEventListener('click', function () {
+                var n = h.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                h.setAttribute('data-theme', n); localStorage.setItem('theme', n);
+            });
+        })();
+    </script>
+</body>
+</html>
