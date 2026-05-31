@@ -12,13 +12,15 @@ import sys
 
 # ── 命令行参数解析（必须在导入项目模块之前）───────────
 # 支持: python main.py --api-key sk-xxx --qwen-api-key sk-xxx [--host 0.0.0.0] [--port 8000]
-_cli_keys = {"--api-key", "--qwen-api-key", "--host", "--port"}
+_cli_keys = {"--api-key", "--qwen-api-key", "--brave-api-key", "--host", "--port"}
 _args = sys.argv[1:]
 for i, arg in enumerate(_args):
     if arg == "--api-key" and i + 1 < len(_args):
         os.environ["DEEPSEEK_API_KEY"] = _args[i + 1]
     elif arg == "--qwen-api-key" and i + 1 < len(_args):
         os.environ["QWEN_API_KEY"] = _args[i + 1]
+    elif arg == "--brave-api-key" and i + 1 < len(_args):
+        os.environ["BRAVE_API_KEY"] = _args[i + 1]
     elif arg == "--host" and i + 1 < len(_args):
         os.environ["HOST"] = _args[i + 1]
     elif arg == "--port" and i + 1 < len(_args):
