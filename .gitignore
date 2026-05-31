@@ -10,6 +10,9 @@ git代理配置排障指南.md
 # 环境变量（含 API Key）
 .env
 
+# 分享数据库
+data/
+
 # IDE
 .vscode/
 .idea/

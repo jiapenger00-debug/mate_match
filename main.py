@@ -32,7 +32,7 @@ from fastapi.templating import Jinja2Templates
 
 from config import HOST, PORT, DEEPSEEK_API_KEY
 from models import GirlInfo, UserInfo, AnalyzeResponse
-from services import search_girl_info, analyze_matching
+from services import search_girl_info, analyze_matching, save_share, get_share
 
 # ── 日志 ──────────────────────────────────────────────
 logging.basicConfig(
@@ -171,6 +171,23 @@ async def analyze(
             search_results=search_results,
         )
 
+    # 步骤3：保存分享数据
+    share_id = None
+    try:
+        share_data = {
+            "girl_name": girl.name,
+            "user_name": user.name,
+            "overall_score": result.overall_score,
+            "dimensions": [d.model_dump() for d in result.dimensions],
+            "summary": result.summary,
+            "suggestion": result.suggestion,
+            "search_results": [sr.model_dump() for sr in (result.search_results or [])],
+        }
+        share_id = save_share(share_data)
+        logger.info(f"分享链接已创建: /s/{share_id}")
+    except Exception as e:
+        logger.warning(f"保存分享数据失败: {e}")
+
     # 渲染结果页
     return templates.TemplateResponse("result.html", {
         "request": request,
@@ -181,6 +198,32 @@ async def analyze(
         "summary": result.summary,
         "suggestion": result.suggestion,
         "search_results": result.search_results or [],
+        "share_id": share_id or "",
+    })
+
+
+@app.post("/api/share")
+async def create_share(request: Request):
+    """接收 JSON 分析结果，保存并返回短 ID。"""
+    import json as _json
+    body = await request.body()
+    data = _json.loads(body)
+    share_id = save_share(data)
+    return {"id": share_id}
+
+
+@app.get("/s/{share_id}", response_class=HTMLResponse)
+async def view_share(request: Request, share_id: str):
+    """查看分享页。"""
+    data = get_share(share_id)
+    if data is None:
+        return HTMLResponse(
+            content='<html><body style="background:#1a0a14;color:#e8d5d0;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div><h1>404</h1><p>该分享不存在或已过期</p><a href="/" style="color:#d4847a;">返回首页</a></div></body></html>',
+            status_code=404
+        )
+    return templates.TemplateResponse("share.html", {
+        "request": request,
+        **data,
     })
 
 
