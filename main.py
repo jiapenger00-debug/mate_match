@@ -25,14 +25,18 @@ for i, arg in enumerate(_args):
         os.environ["PORT"] = _args[i + 1]
 
 import logging
+import ssl
 from pathlib import Path
+
+import certifi
+import httpx
 
 from fastapi import FastAPI, Form, Request, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from config import HOST, PORT, DEEPSEEK_API_KEY
+from config import HOST, PORT, DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
 from models import GirlInfo, UserInfo, AnalyzeResponse, SearchResult
 from services import search_girl_info, analyze_matching, save_share, get_share
 
@@ -382,6 +386,68 @@ async def beauty_status(share_id: str):
     if isinstance(result, dict) and result.get("error"):
         return HTMLResponse(content='{"status":"error"}', media_type="application/json")
     return HTMLResponse(content=_json.dumps({"status":"done","data":result}, ensure_ascii=False), media_type="application/json")
+
+
+@app.post("/api/supplement")
+async def supplement_analysis(request: Request):
+    """接收补充信息，结合原报告重新分析。"""
+    from services.vision_service import analyze_supplement_photo
+    import json as _json
+
+    form = await request.form()
+    share_id = form.get("share_id", "")
+    target = form.get("target", "girl")
+    text = form.get("text", "")
+    photo = form.get("photo")
+
+    # 读取原始数据
+    original = get_share(share_id)
+    if not original:
+        return HTMLResponse(content='{"error":"原始报告不存在"}', status_code=404, media_type="application/json")
+
+    # 处理补充照片
+    photo_desc = ""
+    if photo:
+        try:
+            img_bytes = await photo.read()
+            if img_bytes:
+                photo_desc = await analyze_supplement_photo(img_bytes)
+        except Exception as e:
+            logger.warning(f"补充照片分析失败: {e}")
+
+    # 组装补充上下文
+    supplement_context = f"[补充信息 - 针对{'女方' if target == 'girl' else '男方'}]\n"
+    if text:
+        supplement_context += f"文字补充：{text}\n"
+    if photo_desc:
+        supplement_context += f"照片描述：{photo_desc}\n"
+    supplement_context += "\n原始分析报告：\n"
+    supplement_context += f"综合匹配度：{original.get('overall_score')} 分\n"
+    supplement_context += f"各维度：{_json.dumps(original.get('dimensions', []), ensure_ascii=False)}\n"
+    supplement_context += f"综合评语：{original.get('summary', '')}\n"
+    supplement_context += "\n请基于以上补充信息和原始报告，重新分析两人匹配度，给出更新后的完整报告。"
+
+    # 调用 LLM 重新分析
+    try:
+        from openai import OpenAI
+        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+        http_client = httpx.Client(verify=ssl_ctx)
+        client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL, http_client=http_client)
+        resp = client.chat.completions.create(
+            model=DEEPSEEK_MODEL,
+            messages=[
+                {"role": "system", "content": "你是专业的感情分析专家。基于补充信息和原始报告，重新给出匹配度分析。返回 JSON：{\"overall_score\": 0-100, \"dimensions\": [{\"dimension\":\"维度名\",\"score\":0-100,\"comment\":\"评语\"}], \"summary\":\"综合评语\", \"suggestion\":\"发展建议\"}"},
+                {"role": "user", "content": supplement_context},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.7, max_tokens=2000,
+        )
+        raw = resp.choices[0].message.content
+        data = _json.loads(raw)
+        return HTMLResponse(content=_json.dumps({"overall_score": data.get("overall_score",0), "dimensions": data.get("dimensions",[]), "summary": data.get("summary",""), "suggestion": data.get("suggestion",""), "photo_desc": photo_desc}, ensure_ascii=False), media_type="application/json")
+    except Exception as e:
+        logger.error(f"补充分析失败: {e}")
+        return HTMLResponse(content='{"error":"' + str(e) + '"}', status_code=500, media_type="application/json")
 
 
 @app.post("/api/share")
