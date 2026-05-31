@@ -75,7 +75,7 @@ cloudflared tunnel run soulmatch --url localhost:8000
 
 ---
 
-## 方式二：Localtunnel（最简单，一行命令）
+## 方式三：Localtunnel 命令行详解
 
 无需安装任何东西，直接通过 npx 运行：
 
@@ -99,7 +99,7 @@ your url is: https://xxxx.loca.lt
 
 ---
 
-## 方式三：ngrok
+## 方式四：ngrok
 
 ### 安装
 
