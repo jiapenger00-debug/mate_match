@@ -361,14 +361,24 @@
             searchOverlay.classList.add('visible');
             searchOverlayText.textContent = '正在解读两颗心的距离…';
             searchCount.textContent = '';
-            var fd = new FormData(form);
-            fd.append('selected_results', girlResultsJson || '');
-            fd.append('selected_results_user', userResultsJson || '');
-            fetch('/api/analyze', { method: 'POST', body: fd })
-                .then(function (r) { return r.text(); })
-                .then(function (html) {
-                    document.open(); document.write(html); document.close();
-                });
+            var gf = document.getElementById('girl_photo').files[0];
+            var uf = document.getElementById('user_photo').files[0];
+            function doSubmit() {
+                var fd = new FormData(form);
+                fd.append('selected_results', girlResultsJson || '');
+                fd.append('selected_results_user', userResultsJson || '');
+                fetch('/api/analyze', { method: 'POST', body: fd })
+                    .then(function (r) { return r.text(); })
+                    .then(function (html) { document.open(); document.write(html); document.close(); });
+            }
+            if (gf || uf) {
+                searchOverlayText.textContent = '正在压缩照片…';
+                var done = 0, need = (gf?1:0)+(uf?1:0);
+                function checkDone() { done++; if (done >= need) doSubmit(); }
+                if (gf) compressImage(gf, function (c) { var dt = new DataTransfer(); dt.items.add(new File([c],'girl.jpg')); document.getElementById('girl_photo').files = dt.files; checkDone(); });
+                if (uf) compressImage(uf, function (c) { var dt = new DataTransfer(); dt.items.add(new File([c],'user.jpg')); document.getElementById('user_photo').files = dt.files; checkDone(); });
+                if (!need) doSubmit();
+            } else doSubmit();
         }
 
         searchSkip.addEventListener('click', function () { submitAnalysis('', ''); });
