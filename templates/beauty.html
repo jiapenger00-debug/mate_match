@@ -68,6 +68,26 @@
             upload.classList.add('has-photo');
             checkBoth();
         }
+        function compressImage(file, callback) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var img = new Image();
+                img.onload = function () {
+                    var maxW = 1024, maxH = 1024;
+                    var w = img.width, h = img.height;
+                    if (w > maxW || h > maxH) {
+                        var ratio = Math.min(maxW / w, maxH / h);
+                        w = Math.round(w * ratio); h = Math.round(h * ratio);
+                    }
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    canvas.toBlob(function (blob) { callback(blob); }, 'image/jpeg', 0.7);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
         var submitted = false;
         function checkBoth() {
             if (submitted) return;
@@ -75,13 +95,17 @@
             var uf = document.getElementById('user-file').files[0];
             if (!gf || !uf) return;
             submitted = true;
-            var fd = new FormData();
-            fd.append('girl_photo', gf);
-            fd.append('user_photo', uf);
             document.getElementById('girl-score').textContent = '...';
             document.getElementById('user-score').textContent = '...';
             document.getElementById('girl-result').classList.add('visible');
             document.getElementById('user-result').classList.add('visible');
+            document.getElementById('girl-detail').textContent = '正在压缩图片…';
+            document.getElementById('user-detail').textContent = '正在压缩图片…';
+            compressImage(gf, function (gc) {
+            compressImage(uf, function (uc) {
+            var fd = new FormData();
+            fd.append('girl_photo', gc, 'girl.jpg');
+            fd.append('user_photo', uc, 'user.jpg');
             document.getElementById('girl-detail').textContent = 'AI 正在分析中…';
             document.getElementById('user-detail').textContent = 'AI 正在分析中…';
             fetch('/api/beauty', { method: 'POST', body: fd })
@@ -95,6 +119,8 @@
                     document.getElementById('beauty-match').classList.add('visible');
                 })
                 .catch(function () { submitted = false; });
+            });
+            });
         }
         function showResult(who, data) {
             document.getElementById(who + '-result').classList.add('visible');
