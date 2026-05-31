@@ -239,6 +239,7 @@
         <div class="search-overlay-text" id="search-overlay-text">正在搜索她的公开信息…</div>
         <div class="search-progress"><div class="search-progress-bar"></div></div>
         <p id="search-count" style="color:#9e8a8a;font-size:0.85rem;margin-top:0.8rem;"></p>
+        <button type="button" id="search-skip-now" class="btn" style="width:auto;margin-top:1.5rem;padding:0.5rem 2rem;font-size:0.9rem;display:none;">跳过，直接分析</button>
     </div>
 
     <footer class="footer">
@@ -266,7 +267,9 @@
         var searchResultsList = document.getElementById('search-results-list');
         var searchSkip = document.getElementById('search-skip');
         var searchConfirm = document.getElementById('search-confirm');
+        var searchSkipNow = document.getElementById('search-skip-now');
         var submitBtn = document.getElementById('submit-btn');
+        var searchAbort = null;
         var selectedResultsJson = '[]';
 
         form.addEventListener('submit', function (e) {
@@ -282,11 +285,14 @@
             searchCount.textContent = '';
             submitBtn.disabled = true;
             submitBtn.textContent = '搜索中…';
+            searchSkipNow.style.display = 'block';
 
             var fd = new FormData(form);
-            fetch('/api/search', { method: 'POST', body: fd })
+            searchAbort = new AbortController();
+            fetch('/api/search', { method: 'POST', body: fd, signal: searchAbort.signal })
                 .then(function (r) { return r.json(); })
                 .then(function (results) {
+                    searchSkipNow.style.display = 'none';
                     searchOverlay.classList.remove('visible');
                     if (!results || !results.length) {
                         submitAnalysis(''); return;
@@ -311,6 +317,7 @@
                     submitBtn.style.display = 'none';
                 })
                 .catch(function () {
+                    searchSkipNow.style.display = 'none';
                     searchOverlay.classList.remove('visible');
                     submitAnalysis('');
                 });
@@ -333,7 +340,13 @@
                 });
         }
 
-        searchSkip.addEventListener('click', function () { submitAnalysis('[]'); });
+        searchSkip.addEventListener('click', function () { submitAnalysis(''); });
+        searchSkipNow.addEventListener('click', function () {
+            if (searchAbort) searchAbort.abort();
+            searchSkipNow.style.display = 'none';
+            searchOverlay.classList.remove('visible');
+            submitAnalysis('');
+        });
         searchConfirm.addEventListener('click', function () {
             var checked = [];
             document.querySelectorAll('.search-result-card input:checked').forEach(function (cb) {
