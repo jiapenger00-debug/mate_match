@@ -343,7 +343,7 @@ body::before {
 .demo-preview-row strong { color: var(--rose-light); }
 
 .demo-actions {
-    display: flex; gap: 8px; margin-bottom: 1rem;
+    display: flex; gap: 8px; margin-bottom: 1.5rem;
 }
 .demo-actions .btn { flex: 1; font-size: 0.9rem; padding: 0.6rem; }
 .demo-btn-cancel {
